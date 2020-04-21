@@ -1,3 +1,11 @@
+/**
+ * @file minimake.h
+ * @author toriki_l
+ * @brief File containing general macros for minimake
+ *
+ * This file contains the definition of usefull defines
+ *
+ */
 #ifndef MINIMAKE_H
 #define MINIMAKE_H
 
