@@ -1,24 +1,11 @@
-#include <stdio.h>
-#include <sys/types.h>
-#include <sys/wait.h>
-#include <unistd.h>
+#include <options/options.h>
 
-int main(void)
+#include <stdio.h>
+
+int main(int argc, char *argv[])
 {
-    int status;
-    pid_t pid = fork();
-    if (pid == -1)
-        return -1;
-    else if (!pid)
-    {
-        char * const args[] = {"/bin/sh", "-c", "echo coucou", NULL};
-        if (execve(args[0], args, NULL) == -1)
-            return -1;
-    }
-    else
-    {
-        waitpid(pid, &status, 0);
-        fflush(stdout);
-    }
-    return status;
+    struct options opt;
+    parse_options(argc, argv, &opt);
+    for (unsigned i = 1 + opt.rule_offset; argv[i] != NULL; ++i)
+        printf("%s\n", argv[i]);
 }

@@ -1,15 +1,15 @@
 CC = gcc
-CFLAGS = -Wextra -Wall -Werror -std=c99 -pedantic
+CFLAGS = -Wextra -Wall -Werror -std=c99 -pedantic -g3 -I ./src/
 SRCDIR = ./src
-OBJ = minimake.o
+OBJ = $(SRCDIR)/minimake.o $(SRCDIR)/options/options.o
 
 all: minimake
 
 minimake: $(OBJ)
 	$(CC) $(CFLAGS) -o $@ $^
 
-%.o: $(SRCDIR)/%.c
-	$(CC) $(CFLAGS) $< -c
+%.o: %.c
+	$(CC) $(CFLAGS) -c -o $@ $<
 
 clean:
 	$(RM) minimake $(OBJ)
