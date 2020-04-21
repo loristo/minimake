@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <string.h>
 
 #include <parse/linked.h>
 
@@ -20,6 +21,12 @@ void *linked_allocate(struct linked *l, size_t n)
     new->next = NULL;
     new->data = malloc(n);
     return new->data;
+}
+
+char *linked_strdup(struct linked *l, char *src)
+{
+    char *dest = linked_allocate(l, strlen(src));
+    return dest ? strcpy(dest, src) : NULL;
 }
 
 void linked_free(struct linked *l)
