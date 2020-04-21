@@ -3,7 +3,7 @@
  * @author toriki_l
  * @brief File containing definitions needed for parsing
  *
- * This file contains the definition of the `variable' struc, the `rule'
+ * This file contains the definition of the the `rule'
  * struct, the `parsed' struct, the g_parsed global variables and the parse
  * function.
  *
@@ -14,15 +14,7 @@
 #include <stdio.h>
 
 #include <parse/linked.h>
-
-/**
- * @brief The struct used to store a variable
- */
-struct variable
-{
-    char *name; /**< The name of the variable */
-    char *value; /**< The value of the variable */
-};
+#include <variable/variable.h>
 
 /**
  * @brief The struct used to store a rule
@@ -42,11 +34,6 @@ struct parsed
     struct linked rules; /**< The linked struct containing the list of rules */
     struct linked variables; /**< The linked struct containing the list of variables */
 };
-
-/**
- * @brief The global variable containing the parsed informations
- */
-extern struct parsed *g_parsed;
 
 /**
  * @brief The function that parses the file

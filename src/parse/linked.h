@@ -57,7 +57,8 @@ char *linked_strdup(struct linked *l, char *src);
  * @brief This functions frees the linked list l
  *
  * @param l The linked list that will be freed
+ * @param free_func The function used to free the data
  */
-void linked_free(struct linked *l);
+void linked_free(struct linked *l, void (*free_func)(void *));
 
 #endif /* LINKED_H */

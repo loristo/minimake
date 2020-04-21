@@ -1,8 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <minimake.h>
 #include <options/options.h>
 #include <parse/parse.h>
+
+struct parsed *g_parsed = NULL;
 
 static void help(void)
 {

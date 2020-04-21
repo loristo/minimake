@@ -29,14 +29,14 @@ char *linked_strdup(struct linked *l, char *src)
     return dest ? strcpy(dest, src) : NULL;
 }
 
-void linked_free(struct linked *l)
+void linked_free(struct linked *l, void (*free_func)(void *))
 {
     struct _linked *current = l->head;
     struct _linked *next;
     while (current)
     {
         next = current->next;
-        free(current->data);
+        free_func ? free_func(current->data) : free(current->data);
         free(current);
         current = next;
     }

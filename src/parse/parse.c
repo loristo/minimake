@@ -7,12 +7,10 @@
 #include <minimake.h>
 #include <parse/parse.h>
 
-struct parsed *g_parsed = NULL;
-
 static void parsed_free(void)
 {
-    linked_free(&g_parsed->variables);
-    linked_free(&g_parsed->rules);
+    linked_free(&g_parsed->variables, variable_free);
+    linked_free(&g_parsed->rules, NULL);
     free(g_parsed);
 }
 
@@ -39,9 +37,26 @@ static void parse_rule(char **line, size_t *n, FILE *file)
 
 static void parse_var(char **line, size_t *n, FILE *file)
 {
-    (void) line;
     (void) n;
-    (void) file;
+    const char *whitespaces = " \t\r\n\v\f";
+    char *saveptr;
+    char *var_name = strtok_r(*line, "=", &saveptr);
+    char *var_value = strtok_r(NULL, "\n", &saveptr);
+    var_name = strtok_r(var_name, whitespaces, &saveptr);
+    if (strtok_r(NULL, whitespaces, &saveptr))
+    {
+        free(*line);
+        fclose(file);
+        errx(ERR_NO_RULE_NO_VAR, "*** mutilple variable names.  Stop");
+    }
+    var_value = var_value + strspn(var_value, whitespaces);
+    if (!variable_assign(var_name, var_value))
+    {
+        free(*line);
+        fclose(file);
+        errx(ERR_BAD_ALLOC, "*** allocation error.  Stop");
+    }
+
 }
 
 static void parse_rule_var(char **line, size_t *n, FILE *file)
@@ -82,7 +97,12 @@ void parse(const char *filename)
     char *line = NULL;
     size_t n = 0;
     for (ssize_t i = getline(&line, &n, file); i != -1; i = getline(&line, &n, file))
+    {
+        char *comment = strchr(line, '#');
+        if (comment)
+            *comment = '\n';
         parse_rule_var(&line, &n, file);
+    }
     free(line);
     fclose(file);
 }
