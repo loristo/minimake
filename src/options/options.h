@@ -10,8 +10,6 @@
 #ifndef OPTIONS_H
 #define OPTIONS_H
 
-#define _GNU_SOURCE
-
 /**
  * @brief The structure that stores the options from the command line
  */

@@ -1,9 +1,11 @@
-#include <options/options.h>
-#include <minimake.h>
+#define _GNU_SOURCE
 
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
+
+#include <options/options.h>
+#include <minimake.h>
 
 void parse_options(int argc, char *argv[], struct options *options)
 {
