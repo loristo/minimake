@@ -11,5 +11,7 @@
 
 #define ERR_BAD_OPTION 2
 #define ERR_NO_FILE 2
+#define ERR_BAD_ALLOC 2
+#define ERR_NO_RULE_NO_VAR 2
 
 #endif /* MINIMAKE_H */

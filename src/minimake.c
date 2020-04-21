@@ -2,6 +2,7 @@
 #include <stdlib.h>
 
 #include <options/options.h>
+#include <parse/parse.h>
 
 static void help(void)
 {
@@ -15,4 +16,5 @@ int main(int argc, char *argv[])
     parse_options(argc, argv, &opt);
     if (opt.help)
         help();
+    parse(opt.file);
 }

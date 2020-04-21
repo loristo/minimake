@@ -54,8 +54,8 @@ extern struct parsed *g_parsed;
  * The parsed informations are stored in the g_parsed variable.
  * If the file was not found, g_parsed is null.
  *
- * @param file If null, looks for makefile or Makefile, else the filename
+ * @param filename If null, looks for makefile or Makefile, else the filename
  */
-void parse(const char *file);
+void parse(const char *filename);
 
 #endif /* PARSE_H */
