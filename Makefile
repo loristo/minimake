@@ -13,3 +13,4 @@ minimake: $(OBJ)
 
 clean:
 	$(RM) minimake $(OBJ)
+

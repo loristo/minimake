@@ -144,6 +144,8 @@ static void parse_rule_var(char **line, size_t *n, FILE *file)
     {
         if ((*line)[i] == ':')
         {
+            if (strspn(*line, whitespaces) == i)
+                return;
             parse_rule(line, n, file);
             return;
         }
