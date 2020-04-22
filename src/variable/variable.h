@@ -36,4 +36,6 @@ int variable_assign(const char *var_name, const char *var_value);
  */
 void variable_free(void *variable_ptr);
 
+int variable_expand(char **str);
+
 #endif /* VARIABLE_H */

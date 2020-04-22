@@ -14,3 +14,5 @@ minimake: $(OBJ)
 clean:
 	$(RM) minimake $(OBJ)
 
+check:
+	echo $ $ $ $ $ $ $VAR $(VAR) cou$(VAR)cou  $ coucou $

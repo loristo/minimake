@@ -14,6 +14,16 @@ static void parsed_free(void)
     free(g_parsed);
 }
 
+static void parser_fill(struct parser *parser, char **line, size_t *n,
+        FILE *file)
+{
+    parser->n = n;
+    parser->line = line;
+    parser->file = file;
+    parser->error = 0;
+    parser->error_message[0] = '\0';
+}
+
 static FILE *get_makefile(const char *filename)
 {
     FILE *res;
@@ -29,135 +39,155 @@ static FILE *get_makefile(const char *filename)
 }
 
 
-static void exit_on_error(char **line, FILE *file, int status, const char *str)
+static int exit_on_error(struct parser *parser, int status, const char *str)
 {
-    free(*line);
-    fclose(file);
-    errx(status, str);
+    free(*parser->line);
+    fclose(parser->file);
+    parser->error = status;
+    strncpy(parser->error_message, str, ERROR_MESSAGE_SIZE);
+    return 0;
 }
 
-static void parse_rule_var(char **line, size_t *n, FILE *file);
+static int parse_rule_var(struct parser *parser);
 
-static int generate_dependencies(char *dependencies_str,
+static int generate_dependencies(struct parser *parser ,char *dependencies_str,
         struct linked *dependencies)
 {
-    if (!dependencies_str)
-        return 1;
     const char *whitespaces = " \t\r\n\v\f";
+    if (!variable_expand(&dependencies_str))
+    {
+        free(dependencies_str);
+        return exit_on_error(parser, ERR_BAD_ALLOC,
+                "*** caca var.  Stop");
+    }
     char *saveptr;
     for (char *token = strtok_r(dependencies_str, whitespaces, &saveptr); token;
         token = strtok_r(NULL, whitespaces, &saveptr))
     {
         if (!linked_strdup(dependencies, token))
-            return 0;
+        {
+            free(dependencies_str);
+            return exit_on_error(parser, ERR_NO_RULE_NO_VAR,
+                    "*** allocation error.  Stop");
+        }
     }
+    free(dependencies_str);
     return 1;
 }
 
-static int generate_commands(char **line, size_t *n, FILE *file,
-        struct linked *commands, ssize_t *i)
+static int generate_commands(struct parser *parser, struct linked *commands,
+        ssize_t *i)
 {
     const char *whitespaces = " \t\r\n\v\f";
-    for (*i = getline(line, n, file); *i != -1 &&
-            ((*line)[0] == '\t' || (*line)[0] == '#' || (*line)[0] == '\n');
-            *i = getline(line, n, file))
+    for (*i = getline(parser->line, parser->n, parser->file);
+            *i != -1 && ((*parser->line)[0] == '\t' ||
+                (*parser->line)[0] == '#' || (*parser->line)[0] == '\n');
+            *i = getline(parser->line, parser->n, parser->file))
     {
-        if ((*line)[0] == '#' || (*line)[0] == '\n')
+        if ((*parser->line)[0] == '#' || (*parser->line)[0] == '\n')
             continue;
-        (*line)[*i - 1] = '\0';
-        if (!linked_strdup(commands, *line + strspn(*line, whitespaces)))
-            return 0;
+        (*parser->line)[*i - 1] = '\0';
+        if (!linked_strdup(commands, *parser->line + strspn(*parser->line,
+                        whitespaces)))
+        {
+            return exit_on_error(parser, ERR_BAD_ALLOC,
+                    "*** allocation error.  Stop");
+        }
     }
     if (*i != -1)
     {
-        char *comment = strchr(*line, '#');
+        char *comment = strchr(*parser->line, '#');
         if (comment)
             *comment = '\0';
     }
     return 1;
 }
 
-static void parse_rule(char **line, size_t *n, FILE *file)
+static int parse_rule(struct parser *parser)
 {
     const char *whitespaces = " \t\r\n\v\f";
     char *saveptr;
-    char *target = strdup(strtok_r(*line, ":", &saveptr));
-    if (!target)
+    char *target = strdup(strtok_r(*parser->line, ":", &saveptr));
+    char *dependencies_str = strtok_r(NULL, "\n", &saveptr);
+    dependencies_str = strdup(dependencies_str ? dependencies_str : "");
+    if (!target || !dependencies_str)
     {
-        exit_on_error(line, file, ERR_NO_RULE_NO_VAR,
+        free(target);
+        free(dependencies_str);
+        return exit_on_error(parser, ERR_BAD_ALLOC,
                 "*** allocation error.  Stop");
     }
-    char *dependencies_str = strtok_r(NULL, "\n", &saveptr);
     struct linked dependencies = { NULL, NULL };
     struct linked commands = { NULL, NULL };
     target = strtok_r(target, whitespaces, &saveptr);
     if (strtok_r(NULL, whitespaces, &saveptr))
     {
-        exit_on_error(line, file, ERR_NO_RULE_NO_VAR,
+        free(target);
+        free(dependencies_str);
+        return exit_on_error(parser, ERR_NO_RULE_NO_VAR,
                 "*** mutilple rule names.  Stop");
     }
     ssize_t i = 0;
-    if (!generate_dependencies(dependencies_str, &dependencies) ||
-            !generate_commands(line, n, file, &commands, &i))
+    if (!generate_dependencies(parser, dependencies_str, &dependencies) ||
+            !generate_commands(parser,  &commands, &i))
     {
+        free(target);
         linked_free(&commands, NULL);
         linked_free(&dependencies, NULL);
-        exit_on_error(line, file, ERR_NO_RULE_NO_VAR,
-                "*** allocation error.  Stop");
+        return 0;
     }
     if (!rule_assign(target, &dependencies, &commands))
     {
-        exit_on_error(line, file, ERR_NO_RULE_NO_VAR,
+        return exit_on_error(parser, ERR_BAD_ALLOC,
                 "*** allocation error.  Stop");
     }
     if (i != -1)
-        parse_rule_var(line, n, file);
+        return parse_rule_var(parser);
+    return 1;
 }
 
-static void parse_var(char **line, size_t *n, FILE *file)
+static int parse_var(struct parser *parser)
 {
-    (void) n;
     const char *whitespaces = " \t\r\n\v\f";
     char *saveptr;
-    char *var_name = strtok_r(*line, "=", &saveptr);
+    char *var_name = strtok_r(*parser->line, "=", &saveptr);
     char *var_value = strtok_r(NULL, "\n", &saveptr);
     var_name = strtok_r(var_name, whitespaces, &saveptr);
     if (strtok_r(NULL, whitespaces, &saveptr))
     {
-        exit_on_error(line, file, ERR_NO_RULE_NO_VAR,
+        return exit_on_error(parser, ERR_NO_RULE_NO_VAR,
                 "*** mutilple variable names.  Stop");
     }
     var_value = var_value + strspn(var_value, whitespaces);
     if (!variable_assign(var_name, var_value))
     {
-        exit_on_error(line, file, ERR_NO_RULE_NO_VAR,
+        return exit_on_error(parser, ERR_NO_RULE_NO_VAR,
                 "*** allocation error.  Stop");
     }
+    return 1;
 }
 
-static void parse_rule_var(char **line, size_t *n, FILE *file)
+static int parse_rule_var(struct parser *parser)
 {
     const char *whitespaces = " \t\r\n\v\f";
-    if (strspn(*line, whitespaces) - strlen(*line) == 0)
-        return;
-    for (size_t i = 0; i < *n && (*line)[i]; ++i)
+    if (strspn(*parser->line, whitespaces) - strlen(*parser->line) == 0)
+        return 1;
+    for (size_t i = 0; i < *parser->n && (*parser->line)[i]; ++i)
     {
-        if ((*line)[i] == ':')
+        if ((*parser->line)[i] == ':')
         {
-            if (strspn(*line, whitespaces) == i)
-                return;
-            parse_rule(line, n, file);
-            return;
+            if (strspn(*parser->line, whitespaces) == i)
+                return 1;
+            return parse_rule(parser);
         }
-        else if ((*line)[i] == '=')
+        else if ((*parser->line)[i] == '=')
         {
-            parse_var(line, n, file);
-            return;
+            return parse_var(parser);
         }
         else
             continue;
     }
-    exit_on_error(line, file, ERR_NO_RULE_NO_VAR,
+    return exit_on_error(parser, ERR_NO_RULE_NO_VAR,
             "*** missing separator.  Stop");
 }
 
@@ -176,13 +206,16 @@ void parse(const char *filename)
     atexit(parsed_free);
     char *line = NULL;
     size_t n = 0;
+    struct parser parser;
+    parser_fill(&parser, &line, &n, file);
     for (ssize_t i = getline(&line, &n, file); i != -1;
             i = getline(&line, &n, file))
     {
         char *comment = strchr(line, '#');
         if (comment)
             *comment = '\0';
-        parse_rule_var(&line, &n, file);
+        if (!parse_rule_var(&parser))
+            err(parser.error, parser.error_message);
     }
     free(line);
     fclose(file);

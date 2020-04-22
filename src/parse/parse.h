@@ -16,6 +16,17 @@
 #include <variable/variable.h>
 #include <rule/rule.h>
 
+#define ERROR_MESSAGE_SIZE 64
+
+struct parser
+{
+    char **line; /**< */
+    size_t *n; /**< */
+    FILE *file; /**< */
+    int error; /**< */
+    char error_message[ERROR_MESSAGE_SIZE]; /**< */
+};
+
 /**
  * @brief The struct used to store the rules and variables of the file
  */
