@@ -26,19 +26,16 @@ int variable_assign(const char *var_name, const char *var_value)
         variable = linked_allocate(&g_parsed->variables,
                 sizeof(struct variable));
         if (!variable)
-                return 0;
+            return 0;
+        variable->name = strdup(var_name);
+        if (!variable->name)
+            return 0;
     }
     else
         free(variable->value);
-    variable->name = strdup(var_name);
     variable->value = strdup(var_value);
-    if (!variable->value || !variable->value)
-    {
-        free(variable->value);
-        free(variable->name);
-        free(variable);
+    if (!variable->value)
         return 0;
-    }
     return 1;
 }
 

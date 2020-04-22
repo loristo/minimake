@@ -25,7 +25,7 @@ void *linked_allocate(struct linked *l, size_t n)
 
 char *linked_strdup(struct linked *l, char *src)
 {
-    char *dest = linked_allocate(l, strlen(src));
+    char *dest = linked_allocate(l, strlen(src) + 1);
     return dest ? strcpy(dest, src) : NULL;
 }
 
