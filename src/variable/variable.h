@@ -10,6 +10,9 @@
 #ifndef VARIABLE_H
 #define VARIABLE_H
 
+/**
+ * @brief The processing status of a variable
+ */
 enum variable_status
 {
     PROCESSED,
@@ -24,7 +27,7 @@ struct variable
 {
     char *name; /**< The name of the variable */
     char *value; /**< The value of the variable */
-    enum variable_status status;
+    enum variable_status status; /**< The processing status of the variable */;
 };
 
 /**
@@ -44,6 +47,17 @@ int variable_assign(const char *var_name, const char *var_value);
  */
 void variable_free(void *variable_ptr);
 
+/**
+ * @brief This function expands the variables in the string passed
+ *
+ * The string might be realloced during the process. This function handles
+ * the possible error and returns the code.
+ *
+ * @param str The string in which the variables are expanded
+ * @param persistent If 0, the variables changes are not persistent
+ *
+ * @return The error code or 0 if no error occured
+ */
 int variable_expand(char **str, int persistent);
 
 #endif /* VARIABLE_H */

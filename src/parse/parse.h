@@ -18,13 +18,16 @@
 
 #define ERROR_MESSAGE_SIZE 64
 
+/**
+ * @brief The struct used to store informations need by the parser
+ */
 struct parser
 {
-    char **line; /**< */
-    size_t *n; /**< */
-    FILE *file; /**< */
-    int error; /**< */
-    char error_message[ERROR_MESSAGE_SIZE]; /**< */
+    char **line; /**< The current line */
+    size_t *n; /**< The size of the allocated buffer */
+    FILE *file; /**< The file that is parsed */
+    int error; /**< The error code in case of erro */
+    char error_message[ERROR_MESSAGE_SIZE]; /**< The error message in case of error */
 };
 
 /**
