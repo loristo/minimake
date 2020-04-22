@@ -28,6 +28,8 @@ int variable_assign(const char *var_name, const char *var_value)
         if (!variable)
                 return 0;
     }
+    else
+        free(variable->value);
     variable->name = strdup(var_name);
     variable->value = strdup(var_value);
     if (!variable->value || !variable->value)
