@@ -16,6 +16,8 @@
 #define ERR_BAD_ALLOC 2
 #define ERR_NO_RULE_NO_VAR 2
 #define ERR_MULTIPLE_VAR_NAME 2
+#define ERR_BAD_VAR 2
+#define ERR_RECURSIVE_VAR 2
 
 /**
  * @brief The global variable containing the parsed informations

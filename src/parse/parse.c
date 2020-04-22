@@ -54,11 +54,27 @@ static int generate_dependencies(struct parser *parser ,char *dependencies_str,
         struct linked *dependencies)
 {
     const char *whitespaces = " \t\r\n\v\f";
-    if (!variable_expand(&dependencies_str))
+    int res = variable_expand(&dependencies_str, 0);
+    switch (res)
     {
-        free(dependencies_str);
-        return exit_on_error(parser, ERR_BAD_ALLOC,
-                "*** caca var.  Stop");
+        case 0:
+            break;
+        case 1:
+            exit_on_error(parser, ERR_BAD_ALLOC,
+                "*** allocation error.  Stop");
+            __attribute__ ((fallthrough));
+        case 2:
+            exit_on_error(parser, ERR_BAD_VAR,
+                "*** unterminated variable reference.  Stop");
+            __attribute__ ((fallthrough));
+        case 3:
+            exit_on_error(parser, ERR_RECURSIVE_VAR,
+                "*** Recursive variable references itself (eventually)."
+                "  Stop.");
+            __attribute__ ((fallthrough));
+        default:
+            free(dependencies_str);
+            return 0;
     }
     char *saveptr;
     for (char *token = strtok_r(dependencies_str, whitespaces, &saveptr); token;

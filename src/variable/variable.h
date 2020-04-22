@@ -10,6 +10,13 @@
 #ifndef VARIABLE_H
 #define VARIABLE_H
 
+enum variable_status
+{
+    PROCESSED,
+    PROCESSING,
+    NOT_PROCESSED
+};
+
 /**
  * @brief The struct used to store a variable
  */
@@ -17,6 +24,7 @@ struct variable
 {
     char *name; /**< The name of the variable */
     char *value; /**< The value of the variable */
+    enum variable_status status;
 };
 
 /**
@@ -36,6 +44,6 @@ int variable_assign(const char *var_name, const char *var_value);
  */
 void variable_free(void *variable_ptr);
 
-int variable_expand(char **str);
+int variable_expand(char **str, int persistent);
 
 #endif /* VARIABLE_H */
