@@ -28,6 +28,14 @@ static FILE *get_makefile(const char *filename)
     return res;
 }
 
+
+static void exit_on_error(char **line, FILE *file, int status, const char *str)
+{
+    free(*line);
+    fclose(file);
+    errx(status, str);
+}
+
 static void parse_rule_var(char **line, size_t *n, FILE *file);
 
 static int generate_dependencies(char *dependencies_str,
@@ -50,11 +58,21 @@ static int generate_commands(char **line, size_t *n, FILE *file,
         struct linked *commands, ssize_t *i)
 {
     const char *whitespaces = " \t\r\n\v\f";
-    for (*i = getline(line, n, file); *i != -1 && (*line)[0] == '\t';
+    for (*i = getline(line, n, file); *i != -1 &&
+            ((*line)[0] == '\t' || (*line)[0] == '#' || (*line)[0] == '\n');
             *i = getline(line, n, file))
     {
+        if ((*line)[0] == '#' || (*line)[0] == '\n')
+            continue;
+        (*line)[*i - 1] = '\0';
         if (!linked_strdup(commands, *line + strspn(*line, whitespaces)))
             return 0;
+    }
+    if (*i != -1)
+    {
+        char *comment = strchr(*line, '#');
+        if (comment)
+            *comment = '\0';
     }
     return 1;
 }
@@ -63,16 +81,20 @@ static void parse_rule(char **line, size_t *n, FILE *file)
 {
     const char *whitespaces = " \t\r\n\v\f";
     char *saveptr;
-    char *target = strtok_r(*line, ":", &saveptr);
+    char *target = strdup(strtok_r(*line, ":", &saveptr));
+    if (!target)
+    {
+        exit_on_error(line, file, ERR_NO_RULE_NO_VAR,
+                "*** allocation error.  Stop");
+    }
     char *dependencies_str = strtok_r(NULL, "\n", &saveptr);
     struct linked dependencies = { NULL, NULL };
     struct linked commands = { NULL, NULL };
     target = strtok_r(target, whitespaces, &saveptr);
     if (strtok_r(NULL, whitespaces, &saveptr))
     {
-        free(*line);
-        fclose(file);
-        errx(ERR_NO_RULE_NO_VAR, "*** mutilple rule names.  Stop");
+        exit_on_error(line, file, ERR_NO_RULE_NO_VAR,
+                "*** mutilple rule names.  Stop");
     }
     ssize_t i = 0;
     if (!generate_dependencies(dependencies_str, &dependencies) ||
@@ -80,15 +102,13 @@ static void parse_rule(char **line, size_t *n, FILE *file)
     {
         linked_free(&commands, NULL);
         linked_free(&dependencies, NULL);
-        free(*line);
-        fclose(file);
-        errx(ERR_BAD_ALLOC, "*** allocation error.  Stop");
+        exit_on_error(line, file, ERR_NO_RULE_NO_VAR,
+                "*** allocation error.  Stop");
     }
     if (!rule_assign(target, &dependencies, &commands))
     {
-        free(*line);
-        fclose(file);
-        errx(ERR_BAD_ALLOC, "*** allocation error.  Stop");
+        exit_on_error(line, file, ERR_NO_RULE_NO_VAR,
+                "*** allocation error.  Stop");
     }
     if (i != -1)
         parse_rule_var(line, n, file);
@@ -104,16 +124,14 @@ static void parse_var(char **line, size_t *n, FILE *file)
     var_name = strtok_r(var_name, whitespaces, &saveptr);
     if (strtok_r(NULL, whitespaces, &saveptr))
     {
-        free(*line);
-        fclose(file);
-        errx(ERR_NO_RULE_NO_VAR, "*** mutilple variable names.  Stop");
+        exit_on_error(line, file, ERR_NO_RULE_NO_VAR,
+                "*** mutilple variable names.  Stop");
     }
     var_value = var_value + strspn(var_value, whitespaces);
     if (!variable_assign(var_name, var_value))
     {
-        free(*line);
-        fclose(file);
-        errx(ERR_BAD_ALLOC, "*** allocation error.  Stop");
+        exit_on_error(line, file, ERR_NO_RULE_NO_VAR,
+                "*** allocation error.  Stop");
     }
 }
 
@@ -137,9 +155,8 @@ static void parse_rule_var(char **line, size_t *n, FILE *file)
         else
             continue;
     }
-    free(*line);
-    fclose(file);
-    errx(ERR_NO_RULE_NO_VAR, "*** missing separator.  Stop");
+    exit_on_error(line, file, ERR_NO_RULE_NO_VAR,
+            "*** missing separator.  Stop");
 }
 
 void parse(const char *filename)
@@ -162,7 +179,7 @@ void parse(const char *filename)
     {
         char *comment = strchr(line, '#');
         if (comment)
-            *comment = '\n';
+            *comment = '\0';
         parse_rule_var(&line, &n, file);
     }
     free(line);

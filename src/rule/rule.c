@@ -18,7 +18,7 @@ static struct rule *rule_search(const char *target)
     return NULL;
 }
 
-int rule_assign(const char *target, struct linked *dependencies,
+int rule_assign(char *target, struct linked *dependencies,
         struct linked *commands)
 {
     struct rule *rule = rule_search(target);
@@ -32,19 +32,14 @@ int rule_assign(const char *target, struct linked *dependencies,
             linked_free(dependencies, NULL);
             return 0;
         }
-        rule->target = strdup(target);
-        if (!rule->target)
-        {
-            linked_free(commands, NULL);
-            linked_free(dependencies, NULL);
-            return 0;
-        }
     }
     else
     {
+        free(&rule->target);
         linked_free(&rule->dependencies, NULL);
         linked_free(&rule->commands, NULL);
     }
+    rule->target = target;
     rule->commands.head = commands->head;
     rule->commands.tail = commands->tail;
     rule->dependencies.head = dependencies->head;

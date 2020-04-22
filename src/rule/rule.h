@@ -19,7 +19,7 @@ struct rule
     struct linked commands; /**< The linked struct containing the list of commands */
 };
 
-int rule_assign(const char *target, struct linked *dependencies,
+int rule_assign(char *target, struct linked *dependencies,
         struct linked *commands);
 void rule_free(void *rule_ptr);
 
