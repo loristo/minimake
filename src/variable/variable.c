@@ -142,7 +142,7 @@ int variable_expand(char **str, int persistent)
             case NOT_PROCESSED:
                 *status = PROCESSING;
                 res = variable_expand(var, persistent);
-                *status = PROCESSED;
+                *status = persistent ? PROCESSED : NOT_PROCESSED;
                 break;
             default:
                 break;
