@@ -51,21 +51,23 @@ def tests(directory, binary):
     ls = []
     my_env = os.environ.copy()
     my_env['DIR'] = directory
-    my_env['BINARY'] = binary
     print(colorize(directory, 'white', True))
     for s in os.listdir(directory):
         if not s.startswith('Makefile'):
             continue
         my_env['MAKEFILE'] = s
-        ref = subprocess.Popen([binary, "-f", directory + s],
+        my_env['BINARY'] = 'make'
+        ref = subprocess.Popen(['make', "--no-print-directory", "-f", directory + s],
                 stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=my_env)
         ref_out, ref_err = ref.communicate()
         ref_ret = ref.returncode
-        ref_out = ref_out.decode('utf-8')[:-1]
-        my = subprocess.Popen(['make', "-f", directory + s],
+        my_env['BINARY'] = binary
+        ref_out = ref_out.decode('utf-8')[:-1].replace('make[2]', 'minimake')
+        ref_err = ref_err.decode('utf-8')[:-1].replace('make[2]', 'minimake')
+        my = subprocess.Popen([binary, "-f", directory + s],
                 stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=my_env)
-        my_out,my_err = ref.communicate()
-        my_ret = ref.returncode
+        my_out,my_err = my.communicate()
+        my_ret = my.returncode
         my_out = my_out.decode('utf-8')[:-1]
         my_err = my_err.decode('utf-8')[:-1]
         if my_ret != ref_ret or (my_ret and my_err == "") \
@@ -78,7 +80,7 @@ def tests(directory, binary):
             if my_ret != ref_ret:
                 ls.append("returned with " + str(my_ret) + ", expected " + str(ref_ret))
             if my_out != ref_out:
-                ls.append("bad output: got:\n" + my_out + "\nExcpected:\n" + my_err)
+                ls.append("bad output, got:\n" + my_out + "\nExcpected:\n" + ref_out)
             print(colorize('[KO] ', 'red'), s)
             print_error(ls)
         else:

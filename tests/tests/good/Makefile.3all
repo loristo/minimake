@@ -1,9 +1,10 @@
 CC = gcc
 CFLAGS = -Wextra -Wall -Werror -std=c99 -pedantic -g3 -I ./src/
+TARGETS = alll alll alll
 
 all:
-	$(BINARY) -f $(DIR)$(MAKEFILE) alll alll alll
-	$(BINARY) -f $(DIR)$(MAKEFILE) clean
+	@$(BINARY) -f $(DIR)$(MAKEFILE) $(TARGETS)
+	@$(BINARY) -f $(DIR)$(MAKEFILE) clean
 
 alll: yes
 
