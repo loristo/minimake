@@ -17,6 +17,7 @@ struct rule
     char *target; /**< The name of the target */
     struct linked dependencies; /**< The linked struct containing the list of dependencies */
     struct linked commands; /**< The linked struct containing the list of commands */
+    int is_built; /**< 1 if the rule was built, 0 otherwise */
 };
 
 /**
@@ -37,5 +38,7 @@ int rule_assign(char *target, struct linked *dependencies,
  * @param rule_ptr The rule to free
  */
 void rule_free(void *rule_ptr);
+
+void exec(char *targets[]);
 
 #endif /* RULE_H */

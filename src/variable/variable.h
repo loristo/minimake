@@ -27,7 +27,7 @@ struct variable
 {
     char *name; /**< The name of the variable */
     char *value; /**< The value of the variable */
-    enum variable_status status; /**< The processing status of the variable */;
+    enum variable_status status; /**< The processing status of the variable */
 };
 
 /**

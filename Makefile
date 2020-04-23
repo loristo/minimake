@@ -15,3 +15,5 @@ minimake: $(OBJ)
 
 clean:
 	$(RM) minimake $(OBJ)
+
+caca: coucou

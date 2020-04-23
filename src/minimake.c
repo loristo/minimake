@@ -46,6 +46,7 @@ static void print(void)
             printf("\t'%s'\n", str);
         }
     }
+    exit(EXIT_SUCCESS);
 }
 
 int main(int argc, char *argv[])
@@ -57,4 +58,5 @@ int main(int argc, char *argv[])
     parse(opt.file);
     if (opt.print)
         print();
+    exec(argv + opt.rule_offset + 1);
 }
