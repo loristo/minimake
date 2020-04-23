@@ -49,4 +49,6 @@ struct parsed
  */
 void parse(const char *filename);
 
+void parsed_free(void);
+
 #endif /* PARSE_H */

@@ -3,6 +3,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <wait.h>
 #include <stdlib.h>
 #include <string.h>
 #include <err.h>
@@ -61,10 +62,45 @@ void rule_free(void *rule_ptr)
     free(rule);
 }
 
+static int command_exec(void **cmd)
+{
+    int status;
+    int pid = fork();
+    if (pid == -1)
+        return -1;
+    if (pid)
+        waitpid(pid, &status, 0);
+    else
+    {
+        char *args[] = { "/bin/sh", "-c", *cmd, NULL };
+        *cmd = NULL;
+        parsed_free();
+        if (execvp(args[0], args))
+        {
+            free(args[2]);
+            err(-1, "execve failed");
+        }
+    }
+    return status;
+}
+
 static int rule_exec(struct rule *rule)
 {
     rule->is_built = 1;
-    return 1;
+    int res = 0;
+    char **str;
+    for (struct _linked *command = rule->commands.head; command;
+            command = command->next)
+    {
+        res = 1;
+        str = (char **)&command->data;
+        variable_expand(str, 1);
+        if (**str != '@')
+            puts(*str);
+        fflush(stdout);
+        command_exec(&command->data);
+    }
+    return res;
 }
 
 static long max(long a, long b)
@@ -128,7 +164,6 @@ void exec(char *targets[])
     {
         struct rule *rule = g_parsed->rules.head->data;
         char *new[] = { rule->target, NULL };
-        rule_exec(rule);
         _exec(new, 1);
         return;
     }

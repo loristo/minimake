@@ -7,11 +7,14 @@
 #include <minimake.h>
 #include <parse/parse.h>
 
-static void parsed_free(void)
+void parsed_free(void)
 {
+    if (!g_parsed)
+        return;
     linked_free(&g_parsed->variables, variable_free);
     linked_free(&g_parsed->rules, rule_free);
     free(g_parsed);
+    g_parsed = NULL;
 }
 
 static void parser_fill(struct parser *parser, char **line, size_t *n,
