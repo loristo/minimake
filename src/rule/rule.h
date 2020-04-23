@@ -20,6 +20,9 @@ struct rule
     int is_built; /**< 1 if the rule was built, 0 otherwise */
 };
 
+/**
+ * @brief Ruturn code of the execution
+ */
 enum exec_return_code
 {
     NOTHING = 0,
@@ -46,6 +49,11 @@ int rule_assign(char *target, struct linked *dependencies,
  */
 void rule_free(void *rule_ptr);
 
+/**
+ * @brief This functions executes the target
+ *
+ * @param targets[] The taget to execute
+ */
 void exec(char *targets[]);
 
 #endif /* RULE_H */

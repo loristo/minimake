@@ -49,6 +49,9 @@ struct parsed
  */
 void parse(const char *filename);
 
+/**
+ * @brief This functions frees the global variable
+ */
 void parsed_free(void);
 
 #endif /* PARSE_H */

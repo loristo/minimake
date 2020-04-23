@@ -138,6 +138,8 @@ int variable_expand(char **str, int persistent)
         switch (*status)
         {
             case PROCESSING:
+                if (!persistent)
+                    free(s);
                 return 3;
             case NOT_PROCESSED:
                 *status = PROCESSING;

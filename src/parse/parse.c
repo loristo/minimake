@@ -41,7 +41,6 @@ static FILE *get_makefile(const char *filename)
     return res;
 }
 
-
 static int exit_on_error(struct parser *parser, int status, const char *str)
 {
     free(*parser->line);
@@ -80,7 +79,7 @@ static int parser_expand(char **str, struct parser *parser)
     return 1;
 }
 
-static int generate_dependencies(struct parser *parser ,char *dependencies_str,
+static int parse_dependencies(struct parser *parser ,char *dependencies_str,
         struct linked *dependencies)
 {
     const char *whitespaces = " \t\r\n\v\f";
@@ -101,7 +100,7 @@ static int generate_dependencies(struct parser *parser ,char *dependencies_str,
     return 1;
 }
 
-static int generate_commands(struct parser *parser, struct linked *commands,
+static int parse_commands(struct parser *parser, struct linked *commands,
         ssize_t *i)
 {
     const char *whitespaces = " \t\r\n\v\f";
@@ -136,12 +135,17 @@ static int parse_rule(struct parser *parser)
     char *target = strdup(strtok_r(*parser->line, ":", &saveptr));
     char *dependencies_str = strtok_r(NULL, "\n", &saveptr);
     dependencies_str = strdup(dependencies_str ? dependencies_str : "");
-    if (!target || !dependencies_str || !parser_expand(&target, parser))
+    if (!target || !dependencies_str)
     {
         free(target);
         free(dependencies_str);
         return exit_on_error(parser, ERR_BAD_ALLOC,
                 "*** allocation error.  Stop");
+    }
+    if (!parser_expand(&target, parser))
+    {
+        free(dependencies_str);
+        return 0;
     }
     struct linked dependencies = { NULL, NULL };
     struct linked commands = { NULL, NULL };
@@ -154,8 +158,8 @@ static int parse_rule(struct parser *parser)
                 "*** mutilple rule names.  Stop");
     }
     ssize_t i = 0;
-    if (!generate_dependencies(parser, dependencies_str, &dependencies) ||
-            !generate_commands(parser,  &commands, &i))
+    if (!parse_dependencies(parser, dependencies_str, &dependencies) ||
+            !parse_commands(parser,  &commands, &i))
     {
         free(target);
         linked_free(&commands, NULL);

@@ -40,7 +40,7 @@ int rule_assign(char *target, struct linked *dependencies,
     }
     else
     {
-        free(&rule->target);
+        free(rule->target);
         linked_free(&rule->dependencies, NULL);
         linked_free(&rule->commands, NULL);
     }
@@ -73,6 +73,8 @@ static int command_exec(void **cmd)
     else
     {
         char *args[] = { "/bin/sh", "-c", *cmd, NULL };
+        if (*args[2] == '@')
+            *args[2] = ' ';
         *cmd = NULL;
         if (execvp(args[0], args))
         {
