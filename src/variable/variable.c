@@ -58,7 +58,7 @@ int variable_assign(const char *var_name, const char *var_value)
     }
     else
         free(variable->value);
-    variable->value = strdup(var_value);
+    variable->value = strdup(var_value ? var_value : "");
     if (!variable->value)
         return 0;
     variable->status = NOT_PROCESSED;
@@ -145,6 +145,7 @@ int variable_expand(char **str, int persistent)
                 *status = persistent ? PROCESSED : NOT_PROCESSED;
                 break;
             default:
+                res = 0;
                 break;
         }
 

@@ -11,7 +11,11 @@ minimake: $(OBJ)
 %.o: %.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 
+check: CFLAGS += -fsanitize=address
+check: clean all
+	@./tests/test8.py ./minimake ./tests/
+
 clean:
 	$(RM) minimake $(OBJ)
 
-.PHONY: all clean
+.PHONY: all clean check

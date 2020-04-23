@@ -74,7 +74,6 @@ static int command_exec(void **cmd)
     {
         char *args[] = { "/bin/sh", "-c", *cmd, NULL };
         *cmd = NULL;
-        parsed_free();
         if (execvp(args[0], args))
         {
             free(args[2]);
@@ -94,7 +93,22 @@ static int rule_exec(struct rule *rule)
     {
         res = 1;
         str = (char **)&command->data;
-        variable_expand(str, 1);
+        int res = variable_expand(str, 1);
+        switch (res)
+        {
+            case 0:
+                break;
+            case 1:
+                err(ERR_BAD_ALLOC, "*** allocation error.  Stop");
+            case 2:
+                err(ERR_BAD_VAR, "*** unterminated variable reference.  Stop");
+            case 3:
+                err(ERR_RECURSIVE_VAR,
+                    "*** Recursive variable references itself (eventually)."
+                    "  Stop.");
+            default:
+                break;
+        }
         if (**str != '@')
             puts(*str);
         fflush(stdout);
@@ -124,55 +138,55 @@ static void get_result(int return_code, int *built, int *exec)
     *exec = (return_code & EXEC) | *exec;
 }
 
-static int _exec(char *targets[], int top)
+static int _exec(const char *target, int top)
 {
     int exec = 0;
     int built = 0;
     struct rule *rule;
     struct stat statbuf;
     struct timespec recent = { 0, 0 };
-    for (size_t i = 0; targets[i]; ++i)
+    rule = rule_search(target);
+    if (!rule)
     {
-        rule = rule_search(targets[i]);
-        if (!rule)
-        {
-            if (top)
-                errx(ERR_NO_RULE, "*** No rule to make target '%s'."
-                        "  Stop.", targets[i]);
-            return 0;
-        }
-        if (rule->is_built)
-        {
-            if (top)
-                printf("minimake: '%s' is up to date.\n", targets[i]);
-            continue;
-        }
-        for (struct _linked *dependencies = rule->dependencies.head;
-                dependencies; dependencies = dependencies->next)
-        {
-            char *dep = dependencies->data;
-            char *dependencies_target[] = { dep, NULL };
-            get_result(_exec(dependencies_target, 0), &built, &exec);
-            if (!built)
-            {
-                if (stat(dep, &statbuf))
-                    errx(ERR_NO_RULE, "*** No rule to make target '%s', "
-                            "needed, by '%s'.  Stop.", dep, targets[i]);
-                timespec_max(&recent, &statbuf.st_mtim);
-            }
-        }
-        if (built || stat(targets[i], &statbuf) ||
-                timespec_compare(&recent, &statbuf.st_mtim))
-        {
-            exec = exec | (rule_exec(rule) ? EXEC : 0);
-            if (!exec && top)
-                printf("minimake: Nothing to be done for '%s'.\n", targets[i]);
-            built = 1;
-            continue;
-        }
         if (top)
-                printf("minimake: '%s' is up to date.\n", targets[i]);
+            errx(ERR_NO_RULE, "*** No rule to make target '%s'."
+                    "  Stop.", target);
+        return 0;
     }
+    if (rule->is_built)
+    {
+        if (top)
+        {
+            rule->commands.head
+                ? printf("minimake: '%s' is up to date.\n", target)
+                : printf("minimake: Nothing to be done for '%s'.\n", target);
+        }
+       return 0;
+    }
+    for (struct _linked *dependencies = rule->dependencies.head;
+            dependencies; dependencies = dependencies->next)
+    {
+        char *dep = dependencies->data;
+        get_result(_exec(dep, 0), &built, &exec);
+        if (!built)
+        {
+            if (stat(dep, &statbuf))
+                errx(ERR_NO_RULE, "*** No rule to make target '%s', "
+                        "needed, by '%s'.  Stop.", dep, target);
+            timespec_max(&recent, &statbuf.st_mtim);
+        }
+    }
+    if (built || stat(target, &statbuf) ||
+            timespec_compare(&recent, &statbuf.st_mtim))
+    {
+        exec = exec | (rule_exec(rule) ? EXEC : 0);
+        if (!exec && top)
+            printf("minimake: Nothing to be done for '%s'.\n", target);
+        built = 1;
+        return built | exec;
+    }
+    if (top)
+        printf("minimake: Nothing to be done for '%s'.\n", target);
     return built | exec;
 }
 
@@ -181,9 +195,9 @@ void exec(char *targets[])
     if (!*targets)
     {
         struct rule *rule = g_parsed->rules.head->data;
-        char *new[] = { rule->target, NULL };
-        _exec(new, 1);
+        _exec(rule->target, 1);
         return;
     }
-    _exec(targets, 1);
+    for (size_t i = 0; targets[i]; ++i)
+        _exec(targets[i], 1);
 }

@@ -53,11 +53,9 @@ static int exit_on_error(struct parser *parser, int status, const char *str)
 
 static int parse_rule_var(struct parser *parser);
 
-static int generate_dependencies(struct parser *parser ,char *dependencies_str,
-        struct linked *dependencies)
+static int parser_expand(char **str, struct parser *parser)
 {
-    const char *whitespaces = " \t\r\n\v\f";
-    int res = variable_expand(&dependencies_str, 0);
+    int res = variable_expand(str, 0);
     switch (res)
     {
         case 0:
@@ -76,10 +74,19 @@ static int generate_dependencies(struct parser *parser ,char *dependencies_str,
                 "  Stop.");
             __attribute__ ((fallthrough));
         default:
-            free(dependencies_str);
+            free(*str);
             return 0;
     }
+    return 1;
+}
+
+static int generate_dependencies(struct parser *parser ,char *dependencies_str,
+        struct linked *dependencies)
+{
+    const char *whitespaces = " \t\r\n\v\f";
     char *saveptr;
+    if (!parser_expand(&dependencies_str, parser))
+        return 0;
     for (char *token = strtok_r(dependencies_str, whitespaces, &saveptr); token;
         token = strtok_r(NULL, whitespaces, &saveptr))
     {
@@ -129,7 +136,7 @@ static int parse_rule(struct parser *parser)
     char *target = strdup(strtok_r(*parser->line, ":", &saveptr));
     char *dependencies_str = strtok_r(NULL, "\n", &saveptr);
     dependencies_str = strdup(dependencies_str ? dependencies_str : "");
-    if (!target || !dependencies_str)
+    if (!target || !dependencies_str || !parser_expand(&target, parser))
     {
         free(target);
         free(dependencies_str);
