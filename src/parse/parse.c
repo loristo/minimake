@@ -245,7 +245,7 @@ void parse(const char *filename)
         if (comment)
             *comment = '\0';
         if (!parse_rule_var(&parser))
-            err(parser.error, parser.error_message);
+            errx(parser.error, parser.error_message);
     }
     free(line);
     fclose(file);

@@ -101,11 +101,11 @@ static int rule_exec(struct rule *rule)
             case 0:
                 break;
             case 1:
-                err(ERR_BAD_ALLOC, "*** allocation error.  Stop");
+                errx(ERR_BAD_ALLOC, "*** allocation error.  Stop");
             case 2:
-                err(ERR_BAD_VAR, "*** unterminated variable reference.  Stop");
+                errx(ERR_BAD_VAR, "*** unterminated variable reference.  Stop");
             case 3:
-                err(ERR_RECURSIVE_VAR,
+                errx(ERR_RECURSIVE_VAR,
                     "*** Recursive variable references itself (eventually)."
                     "  Stop.");
             default:
@@ -114,7 +114,9 @@ static int rule_exec(struct rule *rule)
         if (**str != '@')
             puts(*str);
         fflush(stdout);
-        command_exec(&command->data);
+        res = command_exec(&command->data);
+        if (res)
+            errx(ERR_EXEC, "*** [Makefile: %s] Error %d", rule->target, res);
     }
     return res;
 }
