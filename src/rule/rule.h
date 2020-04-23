@@ -20,6 +20,13 @@ struct rule
     int is_built; /**< 1 if the rule was built, 0 otherwise */
 };
 
+enum exec_return_code
+{
+    NOTHING = 0,
+    BUILT = 1,
+    EXEC = 2
+};
+
 /**
  * @brief This function assign a value to a variable
  *

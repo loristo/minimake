@@ -103,17 +103,34 @@ static int rule_exec(struct rule *rule)
     return res;
 }
 
-static long max(long a, long b)
+static int timespec_compare(struct timespec *a, struct timespec *b)
 {
-    return a > b ? a : b;
+    if (a->tv_sec < b->tv_sec)
+        return 0;
+    if (a->tv_sec == b->tv_sec)
+        return a->tv_nsec > b->tv_nsec;
+    return 1;
+}
+
+static void timespec_max(struct timespec *a, struct timespec *b)
+{
+    if (!timespec_compare(a, b))
+        memcpy(a, b, sizeof(struct timespec));
+}
+
+static void get_result(int return_code, int *built, int *exec)
+{
+    *built = (return_code & BUILT) | *built;
+    *exec = (return_code & EXEC) | *exec;
 }
 
 static int _exec(char *targets[], int top)
 {
+    int exec = 0;
     int built = 0;
     struct rule *rule;
     struct stat statbuf;
-    long recent = 0;
+    struct timespec recent = { 0, 0 };
     for (size_t i = 0; targets[i]; ++i)
     {
         rule = rule_search(targets[i]);
@@ -135,27 +152,28 @@ static int _exec(char *targets[], int top)
         {
             char *dep = dependencies->data;
             char *dependencies_target[] = { dep, NULL };
-            int res = _exec(dependencies_target, 0);
-            if (res)
-                built = 1;
-            else
+            get_result(_exec(dependencies_target, 0), &built, &exec);
+            if (!built)
             {
                 if (stat(dep, &statbuf))
                     errx(ERR_NO_RULE, "*** No rule to make target '%s', "
                             "needed, by '%s'.  Stop.", dep, targets[i]);
-                recent = max(recent, statbuf.st_mtim.tv_nsec);
+                timespec_max(&recent, &statbuf.st_mtim);
             }
         }
-        if (built || stat(targets[i], &statbuf) || recent > statbuf.st_mtim.tv_nsec)
+        if (built || stat(targets[i], &statbuf) ||
+                timespec_compare(&recent, &statbuf.st_mtim))
         {
-            if (!rule_exec(rule) && top)
+            exec = exec | (rule_exec(rule) ? EXEC : 0);
+            if (!exec && top)
                 printf("minimake: Nothing to be done for '%s'.\n", targets[i]);
+            built = 1;
             continue;
         }
         if (top)
                 printf("minimake: '%s' is up to date.\n", targets[i]);
     }
-    return 1;
+    return built | exec;
 }
 
 void exec(char *targets[])

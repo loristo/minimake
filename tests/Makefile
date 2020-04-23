@@ -1,7 +1,9 @@
 CC = gcc
 CFLAGS = -Wextra -Wall -Werror -std=c99 -pedantic -g3 -I ./src/
 
-all: test
+all: yes
+
+yes: test
 
 test: test.o
 	gcc -o test test.o
