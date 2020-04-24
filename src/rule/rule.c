@@ -198,7 +198,18 @@ void exec(char *targets[])
 {
     if (!*targets)
     {
-        struct rule *rule = g_parsed->rules.head->data;
+        struct rule *rule = NULL;
+        struct rule *check;
+        for (struct _linked *l = g_parsed->rules.head; l; l = l->next)
+        {
+            check = l->data;
+            if (*check->target == '\0')
+                continue;
+            rule = check;
+            break;
+        }
+        if (!rule)
+            errx(ERR_NO_TARGET, "*** No targets.  Stop.");
         _exec(rule->target, 1);
         return;
     }

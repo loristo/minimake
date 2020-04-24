@@ -132,8 +132,18 @@ static int parse_rule(struct parser *parser)
 {
     const char *whitespaces = " \t\r\n\v\f";
     char *saveptr;
-    char *target = strtok_r(*parser->line, ":", &saveptr);
-    char *dependencies_str = strtok_r(NULL, "\n", &saveptr);
+    char *target;
+    char *dependencies_str;
+    if (**parser->line == ':')
+    {
+        target = NULL;
+        dependencies_str = strtok_r(NULL, ":\n", &saveptr);
+    }
+    else
+    {
+        target = strtok_r(*parser->line, ":", &saveptr);
+        dependencies_str = strtok_r(NULL, "\n", &saveptr);
+    }
     dependencies_str = strdup(dependencies_str ? dependencies_str : "");
     target = strdup(target ? strtok_r(target, whitespaces, &saveptr) : "");
     if (strtok_r(NULL, whitespaces, &saveptr))
@@ -206,8 +216,6 @@ static int parse_rule_var(struct parser *parser)
     {
         if ((*parser->line)[i] == ':')
         {
-            if (strspn(*parser->line, whitespaces) == i)
-                return 1;
             return parse_rule(parser);
         }
         else if ((*parser->line)[i] == '=')
