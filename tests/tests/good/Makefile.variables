@@ -1,0 +1,9 @@
+A = yesai je suis le plus bo :D
+
+all:
+	@$(BINARY) -f $(DIR)$(MAKEFILE) alll
+
+alll:
+	echo coucou$Aaaa
+	echo coucou$(A)aaa
+	echo coucou${A}aaa
