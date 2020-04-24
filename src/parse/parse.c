@@ -62,16 +62,16 @@ static int parser_expand(char **str, struct parser *parser)
         case 1:
             exit_on_error(parser, ERR_BAD_ALLOC,
                 "*** allocation error.  Stop");
-            __attribute__ ((fallthrough));
+            __attribute__((fallthrough));
         case 2:
             exit_on_error(parser, ERR_BAD_VAR,
                 "*** unterminated variable reference.  Stop");
-            __attribute__ ((fallthrough));
+            __attribute__((fallthrough));
         case 3:
             exit_on_error(parser, ERR_RECURSIVE_VAR,
                 "*** Recursive variable references itself (eventually)."
                 "  Stop.");
-            __attribute__ ((fallthrough));
+            __attribute__((fallthrough));
         default:
             free(*str);
             return 0;
@@ -132,9 +132,17 @@ static int parse_rule(struct parser *parser)
 {
     const char *whitespaces = " \t\r\n\v\f";
     char *saveptr;
-    char *target = strdup(strtok_r(*parser->line, ":", &saveptr));
+    char *target = strtok_r(*parser->line, ":", &saveptr);
     char *dependencies_str = strtok_r(NULL, "\n", &saveptr);
     dependencies_str = strdup(dependencies_str ? dependencies_str : "");
+    target = strdup(target ? strtok_r(target, whitespaces, &saveptr) : "");
+    if (strtok_r(NULL, whitespaces, &saveptr))
+    {
+        free(target);
+        free(dependencies_str);
+        return exit_on_error(parser, ERR_NO_RULE_NO_VAR,
+                "*** mutilple rule names.  Stop");
+    }
     if (!target || !dependencies_str)
     {
         free(target);
@@ -149,14 +157,6 @@ static int parse_rule(struct parser *parser)
     }
     struct linked dependencies = { NULL, NULL };
     struct linked commands = { NULL, NULL };
-    target = strtok_r(target, whitespaces, &saveptr);
-    if (strtok_r(NULL, whitespaces, &saveptr))
-    {
-        free(target);
-        free(dependencies_str);
-        return exit_on_error(parser, ERR_NO_RULE_NO_VAR,
-                "*** mutilple rule names.  Stop");
-    }
     ssize_t i = 0;
     if (!parse_dependencies(parser, dependencies_str, &dependencies) ||
             !parse_commands(parser,  &commands, &i))
