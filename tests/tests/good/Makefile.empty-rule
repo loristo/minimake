@@ -1,16 +1,16 @@
 CC = gcc
 CFLAGS = -Wextra -Wall -Werror -std=c99 -pedantic -g3 -I ./src/
 
+: cocoucou
+	echo coucou
+
 all:
 	@$(BINARY) -f $(DIR)$(MAKEFILE) alll
 	@$(BINARY) -f $(DIR)$(MAKEFILE) clean
 
 alll: yes
 
-FOO = $(BAR)
-BAR = $(FOO)
-
-$(FOO): $(DIR)test
+yes: $(DIR)test
 
 $(DIR)test: $(DIR)test.o
 	$(CC) $(CFLAGS) -o $(DIR)test $(DIR)test.o

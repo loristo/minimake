@@ -7,16 +7,18 @@ all:
 
 alll: yes
 
-FOO = $(BAR)
-BAR = $(FOO)
-
-$(FOO): $(DIR)test
+yes: $(DIR)test
+	@
 
 $(DIR)test: $(DIR)test.o
+	@
+	@
 	$(CC) $(CFLAGS) -o $(DIR)test $(DIR)test.o
 
 $(DIR)test.o:
+	@
 	$(CC) $(CFLAGS) -c -o $(DIR)test.o $(DIR)test.c
+	@
 
 clean:
 	rm -f $(DIR)test $(DIR)test.o

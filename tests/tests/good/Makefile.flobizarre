@@ -1,0 +1,25 @@
+SIMPLE_VAR_COMMENT = the comment is gone
+
+all:
+	@touch $(DIR)bar
+	@touch $(DIR)baz
+	@$(BINARY) -f $(DIR)$(MAKEFILE) foo
+	@$(BINARY) -f $(DIR)$(MAKEFILE) clean
+
+foo: bar
+bar: baz
+	touch $(DIR)bar
+
+the:
+	echo a
+comment:
+
+is:
+
+gone :
+
+baz: ${SIMPLE_VAR_COMMENT}
+	echo ${SIMPLE_VAR_COMMENT}
+
+clean:
+	rm -f $(DIR)bar $(DIR)baz

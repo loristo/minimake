@@ -1,0 +1,8 @@
+CC = gcc
+CFLAGS = -Wextra -Wall -Werror -std=c99 -pedantic -g3 -I ./src/
+
+all:
+	@$(BINARY) -f $(DIR)$(MAKEFILE) alll
+
+alll:
+	echo $(EDITOR)
