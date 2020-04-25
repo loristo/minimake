@@ -1,0 +1,21 @@
+CC = gcc
+CFLAGS = -Wextra -Wall -Werror -std=c99 -pedantic -g3 -I ./src/
+
+all:
+	@$(BINARY) -f $(DIR)$(MAKEFILE) alll
+
+alll: yes
+
+yes: coucou 	 	 		kkbf     	sksk yessai
+	echo $^
+	echo $@
+	echo $<
+
+coucou:
+	echo $^
+	echo $@
+	echo $<
+
+kkbf:
+sksk:
+yessai:

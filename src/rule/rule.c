@@ -159,6 +159,47 @@ static int is_phony(const char *target)
     return 0;
 }
 
+static void special_variables(const struct rule *rule)
+{
+    if (!variable_assign("@", rule->target))
+        err(ERR_BAD_ALLOC, "*** allocation error.  Stop");
+    if (!rule->dependencies.head)
+    {
+        if (!variable_assign("<", ""))
+            err(ERR_BAD_ALLOC, "*** allocation error.  Stop");
+        if (!variable_assign("^", ""))
+            err(ERR_BAD_ALLOC, "*** allocation error.  Stop");
+    }
+    else
+    {
+        if (!variable_assign("<", rule->dependencies.head->data))
+            err(ERR_BAD_ALLOC, "*** allocation error.  Stop");
+        char *to_add;
+        char *deps = strdup(rule->dependencies.head->data);;
+        if (!deps)
+            err(ERR_BAD_ALLOC, "*** allocation error.  Stop");
+        size_t len = strlen(deps);
+        size_t to_add_len;
+        for (struct _linked *l = rule->dependencies.head->next; l;
+                l = l->next, len += to_add_len + 1)
+        {
+            to_add = l->data;
+            to_add_len = strlen(to_add);
+            deps = realloc(deps, len + to_add_len + 2);
+            if (!deps)
+                err(ERR_BAD_ALLOC, "*** allocation error.  Stop");
+            deps[len] = ' ';
+            strcpy(deps + len + 1, to_add);
+        }
+        if (!variable_assign("^", deps))
+        {
+            free(deps);
+            err(ERR_BAD_ALLOC, "*** allocation error.  Stop");
+        }
+        free(deps);
+    }
+}
+
 static int _exec(const char *target, int top)
 {
     int exec = 0;
@@ -201,6 +242,7 @@ static int _exec(const char *target, int top)
     if (built || stat(target, &statbuf) ||
             timespec_compare(&recent, &statbuf.st_mtim))
     {
+        special_variables(rule);
         exec = exec | (rule_exec(rule) ? EXEC : 0);
         if (!exec && top)
             printf("minimake: Nothing to be done for '%s'.\n", target);
