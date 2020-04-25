@@ -1,0 +1,16 @@
+CC = gcc
+CFLAGS = -Wextra -Wall -Werror -std=c99 -pedantic
+
+all:
+	@$(BINARY) -f $(DIR)$(MAKEFILE) alll
+	@$(BINARY) -f $(DIR)$(MAKEFILE) clean
+
+alll: yes
+
+yes: yessai
+
+coucou:
+	echo ocucou
+
+clean:
+	rm -f $(DIR)test $(DIR)test.o

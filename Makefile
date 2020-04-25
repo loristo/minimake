@@ -15,8 +15,10 @@ check: CFLAGS += -fsanitize=address
 check: clean all
 	@./tests/test8.py ./minimake tests/
 
+doc:
+	cd ./src && doxygen doc/Doxyfile
+
 clean:
 	$(RM) minimake $(OBJ)
 
-.PHONY: all check clean
-	echo ccoucou
+.PHONY: all check clean doc

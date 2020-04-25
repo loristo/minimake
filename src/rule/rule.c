@@ -6,10 +6,40 @@
 #include <wait.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 #include <err.h>
 
 #include <minimake.h>
 #include <rule/rule.h>
+
+static struct rule *rule_match(const char *target)
+{
+    struct rule *rule;
+    char *rule_str;
+    size_t rule_len;
+    size_t rule_sep;
+    size_t rule_remain;
+    struct rule *rule_res = NULL;
+    size_t rule_res_len = 0;
+    const size_t target_len = strlen(target);
+    for (struct _linked *l = g_parsed->pattern_rules.head; l; l = l->next)
+    {
+        rule = l->data;
+        rule_str = rule->target;
+        rule_len = strlen(rule_str);
+        rule_sep = strchr(rule_str, '%') - rule_str;
+        rule_remain = rule_len - rule_sep - 1;
+        if (rule_len > rule_res_len && target_len > rule_len
+                && !strncmp(target, rule->target, rule_sep)
+                && !strcmp(target + target_len - rule_remain,
+                    rule->target + rule_sep + 1))
+        {
+            rule_res = rule;
+            rule_res_len = rule_len;
+        }
+    }
+    return rule_res;
+}
 
 static struct rule *rule_search(const char *target)
 {
@@ -29,8 +59,9 @@ int rule_assign(char *target, struct linked *dependencies,
     struct rule *rule = rule_search(target);
     if (!rule)
     {
-        rule = linked_allocate(&g_parsed->rules,
-            sizeof(struct rule));
+        rule = strchr(target, '%')
+            ? linked_allocate(&g_parsed->pattern_rules, sizeof(struct rule))
+            : linked_allocate(&g_parsed->rules, sizeof(struct rule));
         if (!rule)
         {
             linked_free(commands, NULL);
@@ -200,31 +231,48 @@ static void special_variables(const struct rule *rule)
     }
 }
 
+static void exec_warn(const char *target, int phony_rule)
+{
+    if (phony_rule)
+    {
+        printf("%s: '%s' is up to date.\n",
+                program_invocation_short_name, target);
+    }
+    else
+    {
+        printf("%s: Nothing to be done for '%s'.\n",
+                program_invocation_short_name, target);
+    }
+}
+
 static int _exec(const char *target, int top)
 {
     int exec = 0;
     int built = 0;
+    int pattern = 0;
     struct rule *rule;
     struct stat statbuf;
     struct timespec recent = { 0, 0 };
     rule = rule_search(target);
     if (!rule)
     {
-        if (top)
-            errx(ERR_NO_RULE, "*** No rule to make target '%s'."
-                    "  Stop.", target);
-        return 0;
+        rule = rule_match(target);
+        if (!rule)
+        {
+            if (top)
+                errx(ERR_NO_RULE, "*** No rule to make target '%s'."
+                        "  Stop.", target);
+            return 0;
+        }
+        pattern = 1;
+        (void) pattern;
     }
     int phony = is_phony(target);
     if (rule->is_built)
     {
         if (top)
-        {
-            rule->commands.head && !phony
-                ? printf("minimake: '%s' is up to date.\n", target)
-                : printf("minimake: Nothing to be done for '%s'.\n", target);
-        }
-       return 0;
+            exec_warn(target, rule->commands.head && !phony);
+        return 0;
     }
     for (struct _linked *dependencies = rule->dependencies.head;
             dependencies; dependencies = dependencies->next)
@@ -245,16 +293,15 @@ static int _exec(const char *target, int top)
         special_variables(rule);
         exec = exec | (rule_exec(rule) ? EXEC : 0);
         if (!exec && top)
-            printf("minimake: Nothing to be done for '%s'.\n", target);
+        {
+            printf("%s: Nothing to be done for '%s'.\n",
+                    program_invocation_short_name, target);
+        }
         built = 1;
         return built | exec;
     }
     if (top)
-    {
-        rule->commands.head && !phony
-            ? printf("minimake: '%s' is up to date.\n", target)
-            : printf("minimake: Nothing to be done for '%s'.\n", target);
-    }
+        exec_warn(target, rule->commands.head && !phony);
     return built | exec;
 }
 
@@ -267,7 +314,7 @@ void exec(char *targets[])
         for (struct _linked *l = g_parsed->rules.head; l; l = l->next)
         {
             check = l->data;
-            if (*check->target == '\0')
+            if (*check->target == '\0' || !strcmp(check->target, ".PHONY"))
                 continue;
             rule = check;
             break;

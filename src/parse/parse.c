@@ -13,6 +13,7 @@ void parsed_free(void)
         return;
     linked_free(&g_parsed->variables, variable_free);
     linked_free(&g_parsed->rules, rule_free);
+    linked_free(&g_parsed->pattern_rules, rule_free);
     free(g_parsed);
     g_parsed = NULL;
 }

@@ -1,0 +1,24 @@
+CC = gcc
+CFLAGS = -Wextra -Wall -Werror -std=c99 -pedantic
+
+.PHONY: alll yes $(DIR)test $(DIR)test.o
+
+all:
+	@touch $(DIR)alll
+	@$(BINARY) -f $(DIR)$(MAKEFILE) $(DIR)alll
+	@$(BINARY) -f $(DIR)$(MAKEFILE) clean
+	@$(BINARY) -f $(DIR)$(MAKEFILE) $(DIR)alll
+	@$(BINARY) -f $(DIR)$(MAKEFILE) clean
+
+$(DIR)alll: yes
+
+yes: $(DIR)test
+
+$(DIR)test: $(DIR)test.o
+	$(CC) $(CFLAGS) -o $(DIR)test $(DIR)test.o
+
+$(DIR)test.o: $(DIR)test.c
+	$(CC) $(CFLAGS) -c -o $(DIR)test.o $(DIR)test.c
+
+clean:
+	rm -f $(DIR)test $(DIR)test.o $(DIR)alll
