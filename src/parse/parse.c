@@ -128,6 +128,13 @@ static int parse_commands(struct parser *parser, struct linked *commands,
     return 1;
 }
 
+static char *remove_spaces(char *str)
+{
+    const char *whitespaces = " \t\r\n\v\f";
+    size_t nb_spaces = strspn(str, whitespaces);
+    return memmove(str, str + nb_spaces, strlen(str + nb_spaces) + 1);
+}
+
 static int parse_rule(struct parser *parser)
 {
     const char *whitespaces = " \t\r\n\v\f";
@@ -136,23 +143,15 @@ static int parse_rule(struct parser *parser)
     char *dependencies_str;
     if (**parser->line == ':')
     {
-        target = NULL;
+        target = strdup("");
         dependencies_str = strtok_r(NULL, ":\n", &saveptr);
     }
     else
     {
-        target = strtok_r(*parser->line, ":", &saveptr);
+        target = strdup(strtok_r(*parser->line, ":", &saveptr));
         dependencies_str = strtok_r(NULL, "\n", &saveptr);
     }
     dependencies_str = strdup(dependencies_str ? dependencies_str : "");
-    target = strdup(target ? strtok_r(target, whitespaces, &saveptr) : "");
-    if (strtok_r(NULL, whitespaces, &saveptr))
-    {
-        free(target);
-        free(dependencies_str);
-        return exit_on_error(parser, ERR_NO_RULE_NO_VAR,
-                "*** mutilple rule names.  Stop");
-    }
     if (!target || !dependencies_str)
     {
         free(target);
@@ -164,6 +163,22 @@ static int parse_rule(struct parser *parser)
     {
         free(dependencies_str);
         return 0;
+    }
+    target = remove_spaces(target);
+    if (!target || !dependencies_str)
+    {
+        free(target);
+        free(dependencies_str);
+        return exit_on_error(parser, ERR_BAD_ALLOC,
+                "*** allocation error.  Stop");
+    }
+    if (strtok_r(target, whitespaces, &saveptr) &&
+            strtok_r(NULL, whitespaces, &saveptr))
+    {
+        free(target);
+        free(dependencies_str);
+        return exit_on_error(parser, ERR_NO_RULE_NO_VAR,
+                "*** multiple rule names.  Stop");
     }
     struct linked dependencies = { NULL, NULL };
     struct linked commands = { NULL, NULL };
@@ -196,7 +211,7 @@ static int parse_var(struct parser *parser)
     if (strtok_r(NULL, whitespaces, &saveptr))
     {
         return exit_on_error(parser, ERR_NO_RULE_NO_VAR,
-                "*** mutilple variable names.  Stop");
+                "*** multiple variable names.  Stop");
     }
     var_value = var_value + strspn(var_value, whitespaces);
     if (!variable_assign(var_name, var_value))
