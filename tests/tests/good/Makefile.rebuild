@@ -1,0 +1,22 @@
+CC = gcc
+CFLAGS = -Wextra -Wall -Werror -std=c99 -pedantic -g3 -I ./src/
+
+all:
+	@cp $(DIR)test.c $(DIR)test-rebuild.c
+	@$(BINARY) -f $(DIR)$(MAKEFILE) alll
+	@echo int 'test(void) { return 1; }' >> $(DIR)test-rebuild.c
+	@$(BINARY) -f $(DIR)$(MAKEFILE) alll
+	@$(BINARY) -f $(DIR)$(MAKEFILE) clean
+
+alll: yes
+
+yes: $(DIR)test
+
+$(DIR)test: $(DIR)test.o
+	$(CC) $(CFLAGS) -o $(DIR)test $(DIR)test.o
+
+$(DIR)test.o: $(DIR)test-rebuild.c
+	$(CC) $(CFLAGS) -c -o $(DIR)test.o $(DIR)test-rebuild.c
+
+clean:
+	rm -f $(DIR)test $(DIR)test.o $(DIR)test-rebuild.c
