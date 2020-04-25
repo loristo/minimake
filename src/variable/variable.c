@@ -103,20 +103,20 @@ int variable_expand(char **str, int persistent)
             variable_ptr = strchr(*str, '$'))
     {
         // gets variable
-        size = 1;
+        size = 2;
         if (variable_ptr[1] == '\n' || variable_ptr[1] == '\0')
             return 0;
         else if (variable_ptr[1] == '{' || variable_ptr[1] == '(')
         {
             if (variable_ptr[1] == '{')
             {
-                size = strcspn(variable_ptr, " \t\r\n\v\f}:#=}") + 1;
+                size = strcspn(variable_ptr, "}") + 1;
                 if (*(variable_ptr + size - 1) != '}')
                     return 2;
             }
             else
             {
-                size = strcspn(variable_ptr, " \t\r\n\v\f):#=)") + 1;
+                size = strcspn(variable_ptr, ")") + 1;
                 if (*(variable_ptr + size - 1) != ')')
                     return 2;
             }
