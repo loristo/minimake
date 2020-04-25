@@ -1,14 +1,14 @@
 CC = gcc
-CFLAGS = -Wextra -Wall -Werror -std=c99 -pedantic -g3 -I ./src/
+CFLAGS = -Wextra -Wall -Werror -std=c99 -pedantic
 
 all:
 	@touch $(DIR)alll
-	@$(BINARY) -f $(DIR)$(MAKEFILE) alll
+	@$(BINARY) -f $(DIR)$(MAKEFILE) $(DIR)alll
 	@$(BINARY) -f $(DIR)$(MAKEFILE) clean
-	@$(BINARY) -f $(DIR)$(MAKEFILE) alll
+	@$(BINARY) -f $(DIR)$(MAKEFILE) $(DIR)alll
 	@$(BINARY) -f $(DIR)$(MAKEFILE) clean
 
-alll: yes
+$(DIR)alll: yes
 
 yes: $(DIR)test
 
@@ -21,4 +21,4 @@ $(DIR)test.o:
 clean:
 	rm -f $(DIR)test $(DIR)test.o $(DIR)alll
 
-.PHONY: alll
+.PHONY: $(DIR)alll

@@ -225,23 +225,15 @@ static int parse_var(struct parser *parser)
 static int parse_rule_var(struct parser *parser)
 {
     const char *whitespaces = " \t\r\n\v\f";
-    if (strspn(*parser->line, whitespaces) - strlen(*parser->line) == 0)
+    if (strspn(*parser->line, whitespaces) == strlen(*parser->line))
         return 1;
-    for (size_t i = 0; i < *parser->n && (*parser->line)[i]; ++i)
-    {
-        if ((*parser->line)[i] == ':')
-        {
-            return parse_rule(parser);
-        }
-        else if ((*parser->line)[i] == '=')
-        {
-            return parse_var(parser);
-        }
-        else
-            continue;
-    }
+    size_t sep = strcspn(*parser->line, ":=\n");
+    if ((*parser->line)[sep] == ':')
+        return parse_rule(parser);
+    if ((*parser->line)[sep] == '=')
+        return parse_var(parser);
     return exit_on_error(parser, ERR_NO_RULE_NO_VAR,
-            "*** missing separator.  Stop");
+        "*** missing separator.  Stop");
 }
 
 void parse(const char *filename)

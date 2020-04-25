@@ -1,0 +1,6 @@
+A = cocou
+
+: yes
+	echo coucou
+
+# .PHONY:

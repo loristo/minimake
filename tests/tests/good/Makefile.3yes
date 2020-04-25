@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -Wextra -Wall -Werror -std=c99 -pedantic -g3 -I ./src/
+CFLAGS = -Wextra -Wall -Werror -std=c99 -pedantic
 
 all:
 	@$(BINARY) -f $(DIR)$(MAKEFILE) yes yes yes

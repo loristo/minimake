@@ -1,0 +1,9 @@
+A = coucoucou ca va :) moi ca va super !! les commentaire est plus 	# la
+
+#bad rule:coucou
+
+all:
+	@$(BINARY) -f $(DIR)$(MAKEFILE) alll
+
+alll:
+	echo "$A"

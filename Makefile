@@ -18,9 +18,5 @@ check: clean all
 clean:
 	$(RM) minimake $(OBJ)
 
-test:
-	if :; then echo "coucou"; else echo "caca"; fi
-	@
-
-
-.PHONY: all clean check
+.PHONY: all check clean
+	echo ccoucou
