@@ -37,6 +37,7 @@ struct parsed
 {
     struct linked rules; /**< The linked struct containing the list of rules */
     struct linked variables; /**< The linked struct containing the list of variables */
+    struct linked *phony; /**< The linked struct containing the phony rules  */
 };
 
 /**

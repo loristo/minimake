@@ -13,7 +13,7 @@ minimake: $(OBJ)
 
 check: CFLAGS += -fsanitize=address
 check: clean all
-	@./tests/test8.py ./minimake ./tests/
+	@./tests/test8.py ./minimake tests/
 
 clean:
 	$(RM) minimake $(OBJ)

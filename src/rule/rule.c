@@ -30,7 +30,7 @@ int rule_assign(char *target, struct linked *dependencies,
     if (!rule)
     {
         rule = linked_allocate(&g_parsed->rules,
-                sizeof(struct rule));
+            sizeof(struct rule));
         if (!rule)
         {
             linked_free(commands, NULL);
@@ -50,6 +50,8 @@ int rule_assign(char *target, struct linked *dependencies,
     rule->dependencies.head = dependencies->head;
     rule->dependencies.tail = dependencies->tail;
     rule->is_built = 0;
+    if (!strcmp(target, ".PHONY"))
+        g_parsed->phony = &rule->dependencies;
     return 1;
 }
 
@@ -142,6 +144,21 @@ static void get_result(int return_code, int *built, int *exec)
     *exec = (return_code & EXEC) | *exec;
 }
 
+static int is_phony(const char *target)
+{
+    if (g_parsed->phony)
+    {
+        char *str;
+        for (struct _linked *l = g_parsed->phony->head; l; l = l->next)
+        {
+            str = l->data;
+            if (!strcmp(target, str))
+                return 1;
+        }
+    }
+    return 0;
+}
+
 static int _exec(const char *target, int top)
 {
     int exec = 0;
@@ -157,11 +174,12 @@ static int _exec(const char *target, int top)
                     "  Stop.", target);
         return 0;
     }
+    int phony = is_phony(target);
     if (rule->is_built)
     {
         if (top)
         {
-            rule->commands.head
+            rule->commands.head && !phony
                 ? printf("minimake: '%s' is up to date.\n", target)
                 : printf("minimake: Nothing to be done for '%s'.\n", target);
         }
@@ -190,7 +208,11 @@ static int _exec(const char *target, int top)
         return built | exec;
     }
     if (top)
-        printf("minimake: Nothing to be done for '%s'.\n", target);
+    {
+        rule->commands.head && !phony
+            ? printf("minimake: '%s' is up to date.\n", target)
+            : printf("minimake: Nothing to be done for '%s'.\n", target);
+    }
     return built | exec;
 }
 
