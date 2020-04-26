@@ -26,4 +26,7 @@ doc:
 clean:
 	$(RM) minimake $(OBJ)
 
+%:
+	echo coucou
+
 .PHONY: all check clean doc

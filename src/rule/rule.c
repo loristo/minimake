@@ -107,7 +107,7 @@ static struct rule *rule_match(struct error *err, const char *target)
         rule_len = strlen(rule_str);
         rule_sep = strchr(rule_str, '%') - rule_str;
         rule_remain = rule_len - rule_sep - 1;
-        if (rule_len > rule_res_len && target_len > rule_len
+        if (rule_len > rule_res_len && target_len >= rule_len
                 && !strncmp(target, rule->target, rule_sep)
                 && !strcmp(target + target_len - rule_remain,
                     rule->target + rule_sep + 1))

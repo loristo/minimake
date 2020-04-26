@@ -1,0 +1,45 @@
+CC = gcc
+CFLAGS = -Wextra -Wall -Werror -std=c99 -pedantic
+
+all:
+	@$(BINARY) -f $(DIR)$(MAKEFILE) alll
+
+alll: coucou ca va fullrule leplusbocmoi
+
+%ou: %yes
+	echo $@
+	echo $^
+	echo $<
+	echo regle 1
+
+%cou: %pamoi
+	echo $@
+	echo $^
+	echo $<
+	echo regle 2
+
+%ucou: pas%cmoi
+	echo $@
+	echo $^
+	echo $<
+	echo regle 3
+
+c%ucou: cenfin%cmoi
+	echo $@
+	echo $^
+	echo $<
+	echo regle 4
+
+cenfincocoucoucmoi:
+
+%:
+	echo $@ $^ $<
+	echo regle 5
+
+cccskegbsghlaaaaaaa:
+
+%rule:
+	echo not me
+
+fullrule:
+	echo me $@
