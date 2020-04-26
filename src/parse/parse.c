@@ -24,8 +24,7 @@ static void parser_fill(struct parser *parser, char **line, size_t *n,
     parser->n = n;
     parser->line = line;
     parser->file = file;
-    parser->error = 0;
-    parser->error_message[0] = '\0';
+    error_init(&parser->err);
 }
 
 static FILE *get_makefile(const char *filename)
@@ -42,13 +41,11 @@ static FILE *get_makefile(const char *filename)
     return res;
 }
 
-static int exit_on_error(struct parser *parser, int status, const char *str)
+static int parser_exit(struct parser *parser, int status, const char *str)
 {
     free(*parser->line);
     fclose(parser->file);
-    parser->error = status;
-    strncpy(parser->error_message, str, ERROR_MESSAGE_SIZE);
-    return 0;
+    return exit_on_error(&parser->err, status, str);
 }
 
 static int parse_rule_var(struct parser *parser);
@@ -61,15 +58,15 @@ static int parser_expand(char **str, struct parser *parser)
         case 0:
             break;
         case 1:
-            exit_on_error(parser, ERR_BAD_ALLOC,
+            parser_exit(parser, ERR_BAD_ALLOC,
                 "*** allocation error.  Stop");
             __attribute__((fallthrough));
         case 2:
-            exit_on_error(parser, ERR_BAD_VAR,
+            parser_exit(parser, ERR_BAD_VAR,
                 "*** unterminated variable reference.  Stop");
             __attribute__((fallthrough));
         case 3:
-            exit_on_error(parser, ERR_RECURSIVE_VAR,
+            parser_exit(parser, ERR_RECURSIVE_VAR,
                 "*** Recursive variable references itself (eventually)."
                 "  Stop.");
             __attribute__((fallthrough));
@@ -93,7 +90,7 @@ static int parse_dependencies(struct parser *parser ,char *dependencies_str,
         if (!linked_strdup(dependencies, token))
         {
             free(dependencies_str);
-            return exit_on_error(parser, ERR_NO_RULE_NO_VAR,
+            return parser_exit(parser, ERR_NO_RULE_NO_VAR,
                     "*** allocation error.  Stop");
         }
     }
@@ -116,7 +113,7 @@ static int parse_commands(struct parser *parser, struct linked *commands,
         if (!linked_strdup(commands, *parser->line + strspn(*parser->line,
                         whitespaces)))
         {
-            return exit_on_error(parser, ERR_BAD_ALLOC,
+            return parser_exit(parser, ERR_BAD_ALLOC,
                     "*** allocation error.  Stop");
         }
     }
@@ -157,7 +154,7 @@ static int parse_rule(struct parser *parser)
     {
         free(target);
         free(dependencies_str);
-        return exit_on_error(parser, ERR_BAD_ALLOC,
+        return parser_exit(parser, ERR_BAD_ALLOC,
                 "*** allocation error.  Stop");
     }
     if (!parser_expand(&target, parser))
@@ -170,7 +167,7 @@ static int parse_rule(struct parser *parser)
     {
         free(target);
         free(dependencies_str);
-        return exit_on_error(parser, ERR_BAD_ALLOC,
+        return parser_exit(parser, ERR_BAD_ALLOC,
                 "*** allocation error.  Stop");
     }
     if (strtok_r(target, whitespaces, &saveptr) &&
@@ -178,7 +175,7 @@ static int parse_rule(struct parser *parser)
     {
         free(target);
         free(dependencies_str);
-        return exit_on_error(parser, ERR_NO_RULE_NO_VAR,
+        return parser_exit(parser, ERR_NO_RULE_NO_VAR,
                 "*** multiple rule names.  Stop");
     }
     struct linked dependencies = { NULL, NULL };
@@ -194,7 +191,7 @@ static int parse_rule(struct parser *parser)
     }
     if (!rule_assign(target, &dependencies, &commands))
     {
-        return exit_on_error(parser, ERR_BAD_ALLOC,
+        return parser_exit(parser, ERR_BAD_ALLOC,
                 "*** allocation error.  Stop");
     }
     if (i != -1)
@@ -211,13 +208,13 @@ static int parse_var(struct parser *parser)
     var_name = strtok_r(var_name, whitespaces, &saveptr);
     if (strtok_r(NULL, whitespaces, &saveptr))
     {
-        return exit_on_error(parser, ERR_NO_RULE_NO_VAR,
+        return parser_exit(parser, ERR_NO_RULE_NO_VAR,
                 "*** multiple variable names.  Stop");
     }
     var_value = var_value + strspn(var_value, whitespaces);
     if (!variable_assign(var_name, var_value))
     {
-        return exit_on_error(parser, ERR_NO_RULE_NO_VAR,
+        return parser_exit(parser, ERR_NO_RULE_NO_VAR,
                 "*** allocation error.  Stop");
     }
     return 1;
@@ -233,7 +230,7 @@ static int parse_rule_var(struct parser *parser)
         return parse_rule(parser);
     if ((*parser->line)[sep] == '=')
         return parse_var(parser);
-    return exit_on_error(parser, ERR_NO_RULE_NO_VAR,
+    return parser_exit(parser, ERR_NO_RULE_NO_VAR,
         "*** missing separator.  Stop");
 }
 
@@ -261,7 +258,7 @@ void parse(const char *filename)
         if (comment)
             *comment = '\0';
         if (!parse_rule_var(&parser))
-            errx(parser.error, parser.error_message);
+            errx(parser.err.code, parser.err.msg);
     }
     free(line);
     fclose(file);

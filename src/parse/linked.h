@@ -53,6 +53,8 @@ void *linked_allocate(struct linked *l, size_t n);
  */
 char *linked_strdup(struct linked *l, char *src);
 
+int linked_str_copy(struct linked *dst, const struct linked *src);
+
 /**
  * @brief This functions frees the linked list l
  *

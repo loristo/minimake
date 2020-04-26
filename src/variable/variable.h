@@ -60,4 +60,17 @@ void variable_free(void *variable_ptr);
  */
 int variable_expand(char **str, int persistent);
 
+/**
+ * @brief Replaces the size bytes from start with token in the given string
+ *
+ * @param str A pointer to the string to modify
+ * @param start The start of the variable in the string
+ * @param size The number of bytes to replace
+ * @param token The token that will added in the string
+ *
+ * @return 1 if the expand was sucessful, 0 otherwise
+ */
+int variable_replace(char **str, char *start, size_t size,
+        const char *token);
+
 #endif /* VARIABLE_H */

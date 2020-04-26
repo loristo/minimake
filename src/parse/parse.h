@@ -13,10 +13,9 @@
 #include <stdio.h>
 
 #include <parse/linked.h>
+#include <error/error.h>
 #include <variable/variable.h>
 #include <rule/rule.h>
-
-#define ERROR_MESSAGE_SIZE 64
 
 /**
  * @brief The struct used to store informations need by the parser
@@ -26,8 +25,7 @@ struct parser
     char **line; /**< The current line */
     size_t *n; /**< The size of the allocated buffer */
     FILE *file; /**< The file that is parsed */
-    int error; /**< The error code in case of erro */
-    char error_message[ERROR_MESSAGE_SIZE]; /**< The error message in case of error */
+    struct error err; /**< The error reported during parsing */
 };
 
 /**

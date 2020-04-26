@@ -65,7 +65,7 @@ int variable_assign(const char *var_name, const char *var_value)
     return 1;
 }
 
-static int variable_replace(char **str, char *start, size_t size,
+int variable_replace(char **str, char *start, size_t size,
         const char *token)
 {
     const size_t len = strlen(token);

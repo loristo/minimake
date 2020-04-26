@@ -12,35 +12,6 @@
 #include <minimake.h>
 #include <rule/rule.h>
 
-static struct rule *rule_match(const char *target)
-{
-    struct rule *rule;
-    char *rule_str;
-    size_t rule_len;
-    size_t rule_sep;
-    size_t rule_remain;
-    struct rule *rule_res = NULL;
-    size_t rule_res_len = 0;
-    const size_t target_len = strlen(target);
-    for (struct _linked *l = g_parsed->pattern_rules.head; l; l = l->next)
-    {
-        rule = l->data;
-        rule_str = rule->target;
-        rule_len = strlen(rule_str);
-        rule_sep = strchr(rule_str, '%') - rule_str;
-        rule_remain = rule_len - rule_sep - 1;
-        if (rule_len > rule_res_len && target_len > rule_len
-                && !strncmp(target, rule->target, rule_sep)
-                && !strcmp(target + target_len - rule_remain,
-                    rule->target + rule_sep + 1))
-        {
-            rule_res = rule;
-            rule_res_len = rule_len;
-        }
-    }
-    return rule_res;
-}
-
 static struct rule *rule_search(const char *target)
 {
     struct rule *rule;
@@ -86,6 +57,81 @@ int rule_assign(char *target, struct linked *dependencies,
     return 1;
 }
 
+static int rule_replace(struct error *err, const char *stem, char **dep)
+{
+    char *start = strchr(*dep, '%');
+    if (!start)
+        return 1;
+    if (!variable_replace(dep, start, 1, stem))
+        return exit_on_error(err, ERR_BAD_ALLOC, "*** allocation error.  Stop");
+    return 1;
+}
+
+static struct rule *rule_copy_replace(struct error *err,
+        const struct rule *rule, char *stem, const char *target)
+{
+    struct linked dependencies;
+    struct linked commands;
+    char *res_target = strdup(target);
+    if (!res_target || !linked_str_copy(&commands, &rule->commands)
+            || !linked_str_copy(&dependencies, &rule->dependencies)
+            || !rule_assign(res_target, &dependencies, &commands))
+    {
+        free(res_target);
+        exit_on_error(err, ERR_BAD_ALLOC, "*** allocation error.  Stop");
+        return NULL;
+    }
+    for (struct _linked *l = dependencies.head; l; l = l->next)
+    {
+        if (!rule_replace(err, stem, (char **)&l->data))
+            return NULL;
+    }
+    return rule_search(target);
+}
+
+static struct rule *rule_match(struct error *err, const char *target)
+{
+    struct rule *rule;
+    char *rule_str;
+    size_t rule_len;
+    size_t rule_sep;
+    size_t rule_remain;
+    struct rule *rule_res = NULL;
+    size_t rule_res_len = 0;
+    char *stem = NULL;
+    const size_t target_len = strlen(target);
+    for (struct _linked *l = g_parsed->pattern_rules.head; l; l = l->next)
+    {
+        rule = l->data;
+        rule_str = rule->target;
+        rule_len = strlen(rule_str);
+        rule_sep = strchr(rule_str, '%') - rule_str;
+        rule_remain = rule_len - rule_sep - 1;
+        if (rule_len > rule_res_len && target_len > rule_len
+                && !strncmp(target, rule->target, rule_sep)
+                && !strcmp(target + target_len - rule_remain,
+                    rule->target + rule_sep + 1))
+        {
+            rule_res = rule;
+            rule_res_len = rule_len;
+            stem = realloc(stem, target_len - rule_sep - rule_remain + 1);
+            if (!stem)
+            {
+                exit_on_error(err, ERR_BAD_ALLOC, "*** allocation error.  "
+                        "Stop");
+                return NULL;
+            }
+            strncpy(stem, target + rule_sep,
+                    target_len - rule_sep - rule_remain);
+            stem[target_len - rule_sep - rule_remain] = '\0';
+        }
+    }
+    if (rule_res)
+        rule_res = rule_copy_replace(err, rule_res, stem, target);
+    free(stem);
+    return rule_res;
+}
+
 void rule_free(void *rule_ptr)
 {
     struct rule *rule = rule_ptr;
@@ -118,7 +164,7 @@ static int command_exec(void **cmd)
     return status;
 }
 
-static int rule_exec(struct rule *rule)
+static int rule_exec(struct error *err, struct rule *rule)
 {
     rule->is_built = 1;
     int res = 0;
@@ -134,11 +180,13 @@ static int rule_exec(struct rule *rule)
             case 0:
                 break;
             case 1:
-                errx(ERR_BAD_ALLOC, "*** allocation error.  Stop");
+                return exit_on_error(err, ERR_BAD_ALLOC,
+                        "*** allocation error.  Stop");
             case 2:
-                errx(ERR_BAD_VAR, "*** unterminated variable reference.  Stop");
+                return exit_on_error(err, ERR_BAD_VAR,
+                        "*** unterminated variable reference.  Stop");
             case 3:
-                errx(ERR_RECURSIVE_VAR,
+                return exit_on_error(err, ERR_RECURSIVE_VAR,
                     "*** Recursive variable references itself (eventually)."
                     "  Stop.");
             default:
@@ -149,7 +197,12 @@ static int rule_exec(struct rule *rule)
         fflush(stdout);
         res = command_exec(&command->data);
         if (res)
-            errx(ERR_EXEC, "*** [Makefile: %s] Error %d", rule->target, res);
+        {
+            char msg[ERROR_MESSAGE_SIZE];
+            snprintf(msg, ERROR_MESSAGE_SIZE, "*** [Makefile: %s] "
+                    "Error %d", rule->target, res);
+            return exit_on_error(err, ERR_NO_RULE, msg);
+        }
     }
     return res;
 }
@@ -190,25 +243,40 @@ static int is_phony(const char *target)
     return 0;
 }
 
-static void special_variables(const struct rule *rule)
+static int special_variables(struct error *err, const struct rule *rule)
 {
     if (!variable_assign("@", rule->target))
-        err(ERR_BAD_ALLOC, "*** allocation error.  Stop");
+    {
+        return exit_on_error(err, ERR_BAD_ALLOC, "*** allocation error.  "
+                "Stop");
+    }
     if (!rule->dependencies.head)
     {
         if (!variable_assign("<", ""))
-            err(ERR_BAD_ALLOC, "*** allocation error.  Stop");
+        {
+            return exit_on_error(err, ERR_BAD_ALLOC, "*** allocation error.  "
+                    "Stop");
+        }
         if (!variable_assign("^", ""))
-            err(ERR_BAD_ALLOC, "*** allocation error.  Stop");
+        {
+            return exit_on_error(err, ERR_BAD_ALLOC, "*** allocation error.  "
+                    "Stop");
+        }
     }
     else
     {
         if (!variable_assign("<", rule->dependencies.head->data))
-            err(ERR_BAD_ALLOC, "*** allocation error.  Stop");
+        {
+            return exit_on_error(err, ERR_BAD_ALLOC, "*** allocation error.  "
+                    "Stop");
+        }
         char *to_add;
         char *deps = strdup(rule->dependencies.head->data);;
         if (!deps)
-            err(ERR_BAD_ALLOC, "*** allocation error.  Stop");
+        {
+            return exit_on_error(err, ERR_BAD_ALLOC, "*** allocation error.  "
+                    "Stop");
+        }
         size_t len = strlen(deps);
         size_t to_add_len;
         for (struct _linked *l = rule->dependencies.head->next; l;
@@ -218,17 +286,22 @@ static void special_variables(const struct rule *rule)
             to_add_len = strlen(to_add);
             deps = realloc(deps, len + to_add_len + 2);
             if (!deps)
-                err(ERR_BAD_ALLOC, "*** allocation error.  Stop");
+            {
+                return exit_on_error(err, ERR_BAD_ALLOC, "*** allocation error.  "
+                        "Stop");
+            }
             deps[len] = ' ';
             strcpy(deps + len + 1, to_add);
         }
         if (!variable_assign("^", deps))
         {
             free(deps);
-            err(ERR_BAD_ALLOC, "*** allocation error.  Stop");
+            return exit_on_error(err, ERR_BAD_ALLOC, "*** allocation error.  "
+                    "Stop");
         }
         free(deps);
     }
+    return 1;
 }
 
 static void exec_warn(const char *target, int phony_rule)
@@ -245,18 +318,19 @@ static void exec_warn(const char *target, int phony_rule)
     }
 }
 
-static int _exec(const char *target, int top)
+static int _exec(struct error *err, const char *target, int top)
 {
     int exec = 0;
     int built = 0;
-    int pattern = 0;
     struct rule *rule;
     struct stat statbuf;
     struct timespec recent = { 0, 0 };
     rule = rule_search(target);
     if (!rule)
     {
-        rule = rule_match(target);
+        rule = rule_match(err, target);
+        if (err->code)
+            return 0;
         if (!rule)
         {
             if (top)
@@ -264,8 +338,6 @@ static int _exec(const char *target, int top)
                         "  Stop.", target);
             return 0;
         }
-        pattern = 1;
-        (void) pattern;
     }
     int phony = is_phony(target);
     if (rule->is_built)
@@ -278,20 +350,29 @@ static int _exec(const char *target, int top)
             dependencies; dependencies = dependencies->next)
     {
         char *dep = dependencies->data;
-        get_result(_exec(dep, 0), &built, &exec);
+        get_result(_exec(err, dep, 0), &built, &exec);
+        if (err->code)
+            return 0;
         if (!built)
         {
             if (stat(dep, &statbuf))
-                errx(ERR_NO_RULE, "*** No rule to make target '%s', "
-                        "needed, by '%s'.  Stop.", dep, target);
+            {
+                char msg[ERROR_MESSAGE_SIZE];
+                snprintf(msg, ERROR_MESSAGE_SIZE, "*** No rule to make target "
+                        "'%s', needed, by '%s'.  Stop.", dep, target);
+                return exit_on_error(err, ERR_NO_RULE, msg);
+            }
             timespec_max(&recent, &statbuf.st_mtim);
         }
     }
     if (built || stat(target, &statbuf) ||
             timespec_compare(&recent, &statbuf.st_mtim))
     {
-        special_variables(rule);
-        exec = exec | (rule_exec(rule) ? EXEC : 0);
+        if (!special_variables(err, rule))
+            return 0;
+        exec = exec | (rule_exec(err, rule) ? EXEC : 0);
+        if (err->code)
+            return 0;
         if (!exec && top)
         {
             printf("%s: Nothing to be done for '%s'.\n",
@@ -307,6 +388,8 @@ static int _exec(const char *target, int top)
 
 void exec(char *targets[])
 {
+    struct error err;
+    error_init(&err);
     if (!*targets)
     {
         struct rule *rule = NULL;
@@ -321,9 +404,16 @@ void exec(char *targets[])
         }
         if (!rule)
             errx(ERR_NO_TARGET, "*** No targets.  Stop.");
-        _exec(rule->target, 1);
+        _exec(&err, rule->target, 1);
+        if (err.code)
+            errx(err.code, err.msg);
         return;
     }
     for (size_t i = 0; targets[i]; ++i)
-        _exec(targets[i], 1);
+    {
+        _exec(&err, targets[i], 1);
+        if (err.code)
+            errx(err.code, err.msg);
+    }
+
 }

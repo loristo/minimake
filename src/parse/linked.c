@@ -41,3 +41,12 @@ void linked_free(struct linked *l, void (*free_func)(void *))
         current = next;
     }
 }
+
+int linked_str_copy(struct linked *dst, const struct linked *src)
+{
+    memset(dst, 0, sizeof(struct linked));
+    for (struct _linked *l = src->head; l; l = l->next)
+        if (!linked_strdup(dst, l->data))
+            return 0;
+    return 1;
+}
