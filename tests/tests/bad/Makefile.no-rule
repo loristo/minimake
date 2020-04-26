@@ -1,6 +1,9 @@
 A = cocou
 
 : yes
+	lsecho coucou
+
+%.c:
 	echo coucou
 
 # .PHONY:

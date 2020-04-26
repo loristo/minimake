@@ -2,8 +2,8 @@ A = coucoucou ca va :) moi ca va super !! les commentaire est plus 	# la
 
 #bad rule:coucou
 
-all:
-	@$(BINARY) -f $(DIR)$(MAKEFILE) alll
+all: # coucou
+	@$(BINARY) -f $(DIR)$(MAKEFILE) alll # le plus obo
 
 alll:
 	echo "$A"
