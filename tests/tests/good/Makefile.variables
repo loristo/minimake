@@ -7,3 +7,6 @@ alll:
 	echo coucou$Aaaa
 	echo coucou$(A)aaa
 	echo coucou${A}aaa
+	echo $$
+	test $$$
+	test $$$$

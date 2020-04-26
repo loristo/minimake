@@ -70,6 +70,8 @@ int variable_assign(const char *var_name, const char *var_value)
 int variable_replace(char **str, char *start, size_t size,
         const char *token)
 {
+    if (!strncmp(start, "$$", 2))
+        token = "$";
     const size_t len = strlen(token);
     const int diff = len - size;
     const size_t move = strlen(start + size) + 1;
@@ -99,13 +101,15 @@ int variable_expand(char **str, int persistent)
     int res;
     char **var;
     char *s = NULL;
+    size_t offset = 0;
     enum variable_status *status;
     // for each '$' in line
     for (char *variable_ptr = strchr(*str, '$'); variable_ptr;
-            variable_ptr = strchr(*str, '$'))
+            variable_ptr = strchr(*str + offset + 1, '$'))
     {
         // gets variable
         size = 2;
+        offset = variable_ptr - *str;
         if (variable_ptr[1] == '\n' || variable_ptr[1] == '\0')
             return 0;
         else if (variable_ptr[1] == '{' || variable_ptr[1] == '(')
@@ -157,7 +161,7 @@ int variable_expand(char **str, int persistent)
         if (!variable_replace(str, variable_ptr, size, *var))
             res = 1;
         free(s);
-        if (res)
+        if (res || (*str)[offset] == '\0')
             return res;
     }
     return 0;
