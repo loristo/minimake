@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -Wextra -Wall -Werror -std=c99 -pedantic -g3 -I ./src/
+CFLAGS = -Wextra -Wall -Werror -std=c99 -pedantic -I ./src/
 SRCDIR = ./src
 OBJ = $(SRCDIR)/minimake.o \
       $(SRCDIR)/options/options.o \
@@ -24,9 +24,6 @@ doc:
 	cd ./src && doxygen doc/Doxyfile
 
 clean:
-	$(RM) minimake $(OBJ)
-
-%:
-	echo coucou
+	$(RM) minimake $(OBJ) test test.o
 
 .PHONY: all check clean doc

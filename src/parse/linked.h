@@ -5,7 +5,7 @@
  *
  * This file contains the definition of the `variable' struc, the `rule'
  * struct, the `parsed' struct, the g_parsed global variables and the parse
- * function.
+ * functions.
  *
  */
 #ifndef LINKED_H
@@ -53,6 +53,14 @@ void *linked_allocate(struct linked *l, size_t n);
  */
 char *linked_strdup(struct linked *l, char *src);
 
+/**
+ * @brief This functions copies a link linst comataining strings
+ *
+ * @param dst The destination
+ * @param src The source
+ *
+ * @return Returns 1 if successfull, 0 otherwise
+ */
 int linked_str_copy(struct linked *dst, const struct linked *src);
 
 /**

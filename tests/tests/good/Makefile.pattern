@@ -3,43 +3,17 @@ CFLAGS = -Wextra -Wall -Werror -std=c99 -pedantic
 
 all:
 	@$(BINARY) -f $(DIR)$(MAKEFILE) alll
+	@$(BINARY) -f $(DIR)$(MAKEFILE) clean
 
-alll: coucou ca va fullrule leplusbocmoi
+alll: yes
 
-%ou: %yes
-	echo $@
-	echo $^
-	echo $<
-	echo regle 1
+yes: $(DIR)test
 
-%cou: %pamoi
-	echo $@
-	echo $^
-	echo $<
-	echo regle 2
+$(DIR)test: $(DIR)test.o
+	$(CC) $(CFLAGS) -o $@ $<
 
-%ucou: pas%cmoi
-	echo $@
-	echo $^
-	echo $<
-	echo regle 3
+$(DIR)%.o: $(DIR)%.c
+	$(CC) $(CFLAGS) -c -o $@ $<
 
-c%ucou: cenfin%cmoi
-	echo $@
-	echo $^
-	echo $<
-	echo regle 4
-
-cenfincocoucoucmoi:
-
-%:
-	echo $@ $^ $<
-	echo regle 5
-
-cccskegbsghlaaaaaaa:
-
-%rule:
-	echo not me
-
-fullrule:
-	echo me $@
+clean:
+	rm -f $(DIR)test $(DIR)test.o
