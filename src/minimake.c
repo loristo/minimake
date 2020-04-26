@@ -21,6 +21,8 @@ static void print(void)
             variables = variables->next)
     {
         variable = variables->data;
+        if (variable->is_env)
+            continue;
         printf("'%s' = '%s'\n", variable->name, variable->value);
     }
 

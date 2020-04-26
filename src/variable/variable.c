@@ -28,7 +28,7 @@ static char **variable_get_value(const char *var_name, size_t n,
     strncpy(s, var_name, n);
     s[n] = 0;
     struct variable *variable = variable_search(s);
-    if (!variable)
+    if (!variable || variable->is_env)
     {
         if (!variable_assign(s, getenv(s)))
         {
@@ -36,6 +36,7 @@ static char **variable_get_value(const char *var_name, size_t n,
             return NULL;
         }
         variable = variable_search(s);
+        variable->is_env = 1;
     }
     if (status)
         *status = &variable->status;
@@ -62,6 +63,7 @@ int variable_assign(const char *var_name, const char *var_value)
     if (!variable->value)
         return 0;
     variable->status = NOT_PROCESSED;
+    variable->is_env = 0;
     return 1;
 }
 
