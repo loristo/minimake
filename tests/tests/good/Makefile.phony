@@ -7,6 +7,8 @@ all:
 	@$(BINARY) -f $(DIR)$(MAKEFILE) clean
 	@$(BINARY) -f $(DIR)$(MAKEFILE) $(DIR)alll
 	@$(BINARY) -f $(DIR)$(MAKEFILE) clean
+	@$(BINARY) -f $(DIR)$(MAKEFILE) .PHONY
+	@$(BINARY) -f $(DIR)$(MAKEFILE) clean
 
 $(DIR)alll: yes
 

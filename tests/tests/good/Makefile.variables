@@ -10,3 +10,4 @@ alll:
 	echo $$
 	test $$$
 	test $$$$
+	test $$$ coucou
