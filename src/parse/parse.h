@@ -10,12 +10,11 @@
 #ifndef PARSE_H
 #define PARSE_H
 
-#include <stdio.h>
-
-#include <parse/linked.h>
 #include <error/error.h>
-#include <variable/variable.h>
+#include <parse/linked.h>
 #include <rule/rule.h>
+#include <stdio.h>
+#include <variable/variable.h>
 
 /**
  * @brief The struct used to store informations need by the parser
@@ -34,8 +33,10 @@ struct parser
 struct parsed
 {
     struct linked rules; /**< The linked struct containing the list of rules */
-    struct linked pattern_rules; /**< The linked struct containing the list of pattern rules */
-    struct linked variables; /**< The linked struct containing the list of variables */
+    struct linked pattern_rules; /**< The linked struct containing the list of
+                                    pattern rules */
+    struct linked
+        variables; /**< The linked struct containing the list of variables */
     struct linked *phony; /**< The linked struct containing the phony rules  */
 };
 

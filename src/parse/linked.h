@@ -23,7 +23,8 @@ struct _linked
 };
 
 /**
- * @brief A header for the linked list containing the head and the tail of the linked list
+ * @brief A header for the linked list containing the head and the tail of the
+ * linked list
  */
 struct linked
 {

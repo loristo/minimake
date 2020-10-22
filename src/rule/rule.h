@@ -1,7 +1,7 @@
 /**
  * @file rule.h
  * @author toriki_l
- * @brief File containing definitions needed for 
+ * @brief File containing definitions needed for
  *
  * This file contains the definition of the `rule' struct.
  *
@@ -15,8 +15,10 @@
 struct rule
 {
     char *target; /**< The name of the target */
-    struct linked dependencies; /**< The linked struct containing the list of dependencies */
-    struct linked commands; /**< The linked struct containing the list of commands */
+    struct linked dependencies; /**< The linked struct containing the list of
+                                   dependencies */
+    struct linked
+        commands; /**< The linked struct containing the list of commands */
     int is_built; /**< 1 if the rule was built, 0 otherwise */
 };
 
@@ -40,7 +42,7 @@ enum exec_return_code
  * @return 1 if the assignment was successful, 0 otherwise
  */
 int rule_assign(char *target, struct linked *dependencies,
-        struct linked *commands);
+                struct linked *commands);
 
 /**
  * @brief This function frees a rule

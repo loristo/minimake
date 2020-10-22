@@ -1,9 +1,8 @@
-#include <stdio.h>
-#include <stdlib.h>
-
 #include <minimake.h>
 #include <options/options.h>
 #include <parse/parse.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 struct parsed *g_parsed = NULL;
 
@@ -18,7 +17,7 @@ static void print(void)
     printf("# variables\n");
     struct variable *variable;
     for (struct _linked *variables = g_parsed->variables.head; variables;
-            variables = variables->next)
+         variables = variables->next)
     {
         variable = variables->data;
         if (variable->is_env)
@@ -29,20 +28,20 @@ static void print(void)
     printf("# rules\n");
     struct rule *rule;
     for (struct _linked *rules = g_parsed->rules.head; rules;
-            rules = rules->next)
+         rules = rules->next)
     {
         rule = rules->data;
         printf("(%s):", rule->target);
         char *str;
         for (struct _linked *dependencies = rule->dependencies.head;
-                dependencies; dependencies = dependencies->next)
+             dependencies; dependencies = dependencies->next)
         {
             str = dependencies->data;
             printf(" [%s]", str);
         }
         printf("\n");
-        for (struct _linked *commands = rule->commands.head;
-                commands; commands = commands->next)
+        for (struct _linked *commands = rule->commands.head; commands;
+             commands = commands->next)
         {
             str = commands->data;
             printf("\t'%s'\n", str);

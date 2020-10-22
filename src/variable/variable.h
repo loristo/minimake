@@ -71,7 +71,6 @@ int variable_expand(char **str, int persistent);
  *
  * @return 1 if the expand was sucessful, 0 otherwise
  */
-int variable_replace(char **str, char *start, size_t size,
-        const char *token);
+int variable_replace(char **str, char *start, size_t size, const char *token);
 
 #endif /* VARIABLE_H */

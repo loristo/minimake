@@ -1,10 +1,9 @@
 #define _GNU_SOURCE
 
+#include <err.h>
+#include <minimake.h>
 #include <stdlib.h>
 #include <string.h>
-#include <err.h>
-
-#include <minimake.h>
 #include <variable/variable.h>
 
 static struct variable *variable_search(const char *var_name)
@@ -20,7 +19,7 @@ static struct variable *variable_search(const char *var_name)
 }
 
 static char **variable_get_value(const char *var_name, size_t n,
-        enum variable_status **status)
+                                 enum variable_status **status)
 {
     char *s = malloc(n + 1);
     if (!s)
@@ -49,8 +48,8 @@ int variable_assign(const char *var_name, const char *var_value)
     struct variable *variable = variable_search(var_name);
     if (!variable)
     {
-        variable = linked_allocate(&g_parsed->variables,
-                sizeof(struct variable));
+        variable =
+            linked_allocate(&g_parsed->variables, sizeof(struct variable));
         if (!variable)
             return 0;
         variable->name = strdup(var_name);
@@ -67,8 +66,7 @@ int variable_assign(const char *var_name, const char *var_value)
     return 1;
 }
 
-int variable_replace(char **str, char *start, size_t size,
-        const char *token)
+int variable_replace(char **str, char *start, size_t size, const char *token)
 {
     if (!strncmp(start, "$$", 2))
         token = "$";
@@ -105,7 +103,7 @@ int variable_expand(char **str, int persistent)
     enum variable_status *status;
     // for each '$' in line
     for (char *variable_ptr = strchr(*str, '$'); variable_ptr;
-            variable_ptr = strchr(*str + offset + 1, '$'))
+         variable_ptr = strchr(*str + offset + 1, '$'))
     {
         // gets variable
         size = 2;
@@ -143,18 +141,18 @@ int variable_expand(char **str, int persistent)
         }
         switch (*status)
         {
-            case PROCESSING:
-                if (!persistent)
-                    free(s);
-                return 3;
-            case NOT_PROCESSED:
-                *status = PROCESSING;
-                res = variable_expand(var, persistent);
-                *status = persistent ? PROCESSED : NOT_PROCESSED;
-                break;
-            default:
-                res = 0;
-                break;
+        case PROCESSING:
+            if (!persistent)
+                free(s);
+            return 3;
+        case NOT_PROCESSED:
+            *status = PROCESSING;
+            res = variable_expand(var, persistent);
+            *status = persistent ? PROCESSED : NOT_PROCESSED;
+            break;
+        default:
+            res = 0;
+            break;
         }
 
         // expand in str

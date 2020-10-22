@@ -1,7 +1,6 @@
+#include <parse/linked.h>
 #include <stdlib.h>
 #include <string.h>
-
-#include <parse/linked.h>
 
 void *linked_allocate(struct linked *l, size_t n)
 {

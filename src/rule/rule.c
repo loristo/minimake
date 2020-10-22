@@ -1,16 +1,15 @@
 #define _GNU_SOURCE
 
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <unistd.h>
-#include <wait.h>
-#include <stdlib.h>
-#include <string.h>
-#include <errno.h>
 #include <err.h>
-
+#include <errno.h>
 #include <minimake.h>
 #include <rule/rule.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include <wait.h>
 
 static struct rule *rule_search(const char *target)
 {
@@ -25,7 +24,7 @@ static struct rule *rule_search(const char *target)
 }
 
 int rule_assign(char *target, struct linked *dependencies,
-        struct linked *commands)
+                struct linked *commands)
 {
     struct rule *rule = rule_search(target);
     if (!rule)
@@ -68,14 +67,15 @@ static int rule_replace(struct error *err, const char *stem, char **dep)
 }
 
 static struct rule *rule_copy_replace(struct error *err,
-        const struct rule *rule, char *stem, const char *target)
+                                      const struct rule *rule, char *stem,
+                                      const char *target)
 {
     struct linked dependencies;
     struct linked commands;
     char *res_target = strdup(target);
     if (!res_target || !linked_str_copy(&commands, &rule->commands)
-            || !linked_str_copy(&dependencies, &rule->dependencies)
-            || !rule_assign(res_target, &dependencies, &commands))
+        || !linked_str_copy(&dependencies, &rule->dependencies)
+        || !rule_assign(res_target, &dependencies, &commands))
     {
         free(res_target);
         exit_on_error(err, ERR_BAD_ALLOC, "*** allocation error.  Stop");
@@ -108,17 +108,18 @@ static struct rule *rule_match(struct error *err, const char *target)
         rule_sep = strchr(rule_str, '%') - rule_str;
         rule_remain = rule_len - rule_sep - 1;
         if (rule_len > rule_res_len && target_len >= rule_len
-                && !strncmp(target, rule->target, rule_sep)
-                && !strcmp(target + target_len - rule_remain,
-                    rule->target + rule_sep + 1))
+            && !strncmp(target, rule->target, rule_sep)
+            && !strcmp(target + target_len - rule_remain,
+                       rule->target + rule_sep + 1))
         {
             rule_res = rule;
             rule_res_len = rule_len;
             stem = realloc(stem, target_len - rule_sep - rule_remain + 1);
             if (!stem)
             {
-                exit_on_error(err, ERR_BAD_ALLOC, "*** allocation error.  "
-                        "Stop");
+                exit_on_error(err, ERR_BAD_ALLOC,
+                              "*** allocation error.  "
+                              "Stop");
                 return NULL;
             }
             strncpy(stem, target + rule_sep,
@@ -170,27 +171,28 @@ static int rule_exec(struct error *err, struct rule *rule)
     int res = 0;
     char **str;
     for (struct _linked *command = rule->commands.head; command;
-            command = command->next)
+         command = command->next)
     {
         res = 1;
         str = (char **)&command->data;
         int res = variable_expand(str, 1);
         switch (res)
         {
-            case 0:
-                break;
-            case 1:
-                return exit_on_error(err, ERR_BAD_ALLOC,
-                        "*** allocation error.  Stop");
-            case 2:
-                return exit_on_error(err, ERR_BAD_VAR,
-                        "*** unterminated variable reference.  Stop");
-            case 3:
-                return exit_on_error(err, ERR_RECURSIVE_VAR,
-                    "*** Recursive variable references itself (eventually)."
-                    "  Stop.");
-            default:
-                break;
+        case 0:
+            break;
+        case 1:
+            return exit_on_error(err, ERR_BAD_ALLOC,
+                                 "*** allocation error.  Stop");
+        case 2:
+            return exit_on_error(err, ERR_BAD_VAR,
+                                 "*** unterminated variable reference.  Stop");
+        case 3:
+            return exit_on_error(
+                err, ERR_RECURSIVE_VAR,
+                "*** Recursive variable references itself (eventually)."
+                "  Stop.");
+        default:
+            break;
         }
         if (**str != '@')
             puts(*str);
@@ -199,8 +201,10 @@ static int rule_exec(struct error *err, struct rule *rule)
         if (res)
         {
             char msg[ERROR_MESSAGE_SIZE];
-            snprintf(msg, ERROR_MESSAGE_SIZE, "*** [Makefile: %s] "
-                    "Error %d", rule->target, res);
+            snprintf(msg, ERROR_MESSAGE_SIZE,
+                     "*** [Makefile: %s] "
+                     "Error %d",
+                     rule->target, res);
             return exit_on_error(err, ERR_NO_RULE, msg);
         }
     }
@@ -247,48 +251,55 @@ static int special_variables(struct error *err, const struct rule *rule)
 {
     if (!variable_assign("@", rule->target))
     {
-        return exit_on_error(err, ERR_BAD_ALLOC, "*** allocation error.  "
-                "Stop");
+        return exit_on_error(err, ERR_BAD_ALLOC,
+                             "*** allocation error.  "
+                             "Stop");
     }
     if (!rule->dependencies.head)
     {
         if (!variable_assign("<", ""))
         {
-            return exit_on_error(err, ERR_BAD_ALLOC, "*** allocation error.  "
-                    "Stop");
+            return exit_on_error(err, ERR_BAD_ALLOC,
+                                 "*** allocation error.  "
+                                 "Stop");
         }
         if (!variable_assign("^", ""))
         {
-            return exit_on_error(err, ERR_BAD_ALLOC, "*** allocation error.  "
-                    "Stop");
+            return exit_on_error(err, ERR_BAD_ALLOC,
+                                 "*** allocation error.  "
+                                 "Stop");
         }
     }
     else
     {
         if (!variable_assign("<", rule->dependencies.head->data))
         {
-            return exit_on_error(err, ERR_BAD_ALLOC, "*** allocation error.  "
-                    "Stop");
+            return exit_on_error(err, ERR_BAD_ALLOC,
+                                 "*** allocation error.  "
+                                 "Stop");
         }
         char *to_add;
-        char *deps = strdup(rule->dependencies.head->data);;
+        char *deps = strdup(rule->dependencies.head->data);
+        ;
         if (!deps)
         {
-            return exit_on_error(err, ERR_BAD_ALLOC, "*** allocation error.  "
-                    "Stop");
+            return exit_on_error(err, ERR_BAD_ALLOC,
+                                 "*** allocation error.  "
+                                 "Stop");
         }
         size_t len = strlen(deps);
         size_t to_add_len;
         for (struct _linked *l = rule->dependencies.head->next; l;
-                l = l->next, len += to_add_len + 1)
+             l = l->next, len += to_add_len + 1)
         {
             to_add = l->data;
             to_add_len = strlen(to_add);
             deps = realloc(deps, len + to_add_len + 2);
             if (!deps)
             {
-                return exit_on_error(err, ERR_BAD_ALLOC, "*** allocation error.  "
-                        "Stop");
+                return exit_on_error(err, ERR_BAD_ALLOC,
+                                     "*** allocation error.  "
+                                     "Stop");
             }
             deps[len] = ' ';
             strcpy(deps + len + 1, to_add);
@@ -296,8 +307,9 @@ static int special_variables(struct error *err, const struct rule *rule)
         if (!variable_assign("^", deps))
         {
             free(deps);
-            return exit_on_error(err, ERR_BAD_ALLOC, "*** allocation error.  "
-                    "Stop");
+            return exit_on_error(err, ERR_BAD_ALLOC,
+                                 "*** allocation error.  "
+                                 "Stop");
         }
         free(deps);
     }
@@ -308,13 +320,13 @@ static void exec_warn(const char *target, int phony_rule)
 {
     if (phony_rule)
     {
-        printf("%s: '%s' is up to date.\n",
-                program_invocation_short_name, target);
+        printf("%s: '%s' is up to date.\n", program_invocation_short_name,
+               target);
     }
     else
     {
         printf("%s: Nothing to be done for '%s'.\n",
-                program_invocation_short_name, target);
+               program_invocation_short_name, target);
     }
 }
 
@@ -334,8 +346,10 @@ static int _exec(struct error *err, const char *target, int top)
         if (!rule)
         {
             if (top)
-                errx(ERR_NO_RULE, "*** No rule to make target '%s'."
-                        "  Stop.", target);
+                errx(ERR_NO_RULE,
+                     "*** No rule to make target '%s'."
+                     "  Stop.",
+                     target);
             return 0;
         }
     }
@@ -346,8 +360,8 @@ static int _exec(struct error *err, const char *target, int top)
             exec_warn(target, rule->commands.head && !phony);
         return 0;
     }
-    for (struct _linked *dependencies = rule->dependencies.head;
-            dependencies; dependencies = dependencies->next)
+    for (struct _linked *dependencies = rule->dependencies.head; dependencies;
+         dependencies = dependencies->next)
     {
         char *dep = dependencies->data;
         get_result(_exec(err, dep, 0), &built, &exec);
@@ -358,15 +372,17 @@ static int _exec(struct error *err, const char *target, int top)
             if (stat(dep, &statbuf))
             {
                 char msg[ERROR_MESSAGE_SIZE];
-                snprintf(msg, ERROR_MESSAGE_SIZE, "*** No rule to make target "
-                        "'%s', needed, by '%s'.  Stop.", dep, target);
+                snprintf(msg, ERROR_MESSAGE_SIZE,
+                         "*** No rule to make target "
+                         "'%s', needed, by '%s'.  Stop.",
+                         dep, target);
                 return exit_on_error(err, ERR_NO_RULE, msg);
             }
             timespec_max(&recent, &statbuf.st_mtim);
         }
     }
-    if (built || stat(target, &statbuf) ||
-            timespec_compare(&recent, &statbuf.st_mtim))
+    if (built || stat(target, &statbuf)
+        || timespec_compare(&recent, &statbuf.st_mtim))
     {
         if (!special_variables(err, rule))
             return 0;
@@ -376,7 +392,7 @@ static int _exec(struct error *err, const char *target, int top)
         if (!exec && top)
         {
             printf("%s: Nothing to be done for '%s'.\n",
-                    program_invocation_short_name, target);
+                   program_invocation_short_name, target);
         }
         built = 1;
         return built | exec;
@@ -415,5 +431,4 @@ void exec(char *targets[])
         if (err.code)
             errx(err.code, err.msg);
     }
-
 }

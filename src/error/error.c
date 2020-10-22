@@ -1,6 +1,5 @@
-#include <string.h>
-
 #include <error/error.h>
+#include <string.h>
 
 int exit_on_error(struct error *error, int status, const char *str)
 {
