@@ -3,7 +3,7 @@
 ## Description
 
 Minimake is a shcool project made in one week.
-The objectif is to recreate the behaviour of the GNU `make` program.
+The objective is to recreate the behaviour of the GNU `make` program.
 
 # Features
 
